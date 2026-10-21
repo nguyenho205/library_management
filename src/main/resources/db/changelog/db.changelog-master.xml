@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <include file="db/changelog/changes/001-create-account-table.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/002-create-member-table.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/003-create-category-table.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/004-create-author-table.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/005-create-book-table.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/006-create-book-author-table.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/007-create-borrow-record-table.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/008-create-system-config-table.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/009-create-verification-token-table.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/010-create-blacklisted-token-table.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/011-insert-default-data.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/012-create-permission-tables.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/013-add-email-verification-code.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/014-single-permission-group-per-account.xml" relativeToChangelogFile="false"/>
+
+</databaseChangeLog>

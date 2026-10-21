@@ -1,0 +1,6 @@
+isbn,title,description,quantityTotal,category,authors
+978-0134685991,Effective Java,Cuon sach kinh dien ve Java best practices,5,Lap trinh,Joshua Bloch
+978-1491950357,Building Microservices,Thiet ke he thong microservices,3,Kien truc phan mem,Sam Newman
+978-0596007126,Head First Design Patterns,Hoc Design Pattern qua vi du truc quan,4,Lap trinh,Eric Freeman;Elisabeth Robson
+978-0135166307,Clean Architecture,Nguyen tac thiet ke kien truc phan mem sach,6,Kien truc phan mem,Robert C. Martin
+978-1617294945,Spring Boot in Action,Huong dan xay dung ung dung voi Spring Boot,5,Lap trinh,Craig Walls

@@ -1,0 +1,69 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: library-management
+
+  config:
+    import: "optional:classpath:application-local.yml"
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/library_db?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Ho_Chi_Minh
+    username: root
+    password:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      # Dung Liquibase quan ly schema -> Hibernate CHI validate, khong tu dong tao/sua bang
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.xml
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 5MB
+
+  mail:
+    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:nguyenhobd.2005@gmail.com}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+# ===== Custom app properties =====
+app:
+  jwt:
+    secret: "ThisIsADemoSecretKeyForJWTSigning_PleaseChangeInProduction_123456"
+    access-token-expiration-ms: 900000        # 15 phut
+    refresh-token-expiration-ms: 604800000    # 7 ngay
+  mail:
+    enabled: ${APP_MAIL_ENABLED:true}   # Bat gui mail that bang APP_MAIL_ENABLED=true
+    from: ${MAIL_FROM:${spring.mail.username:nguyenhobd.2005@gmail.com}}
+  frontend-url: http://localhost:5173   # dia chi React dev server
+  default-admin:
+    email: admin@library.local
+    password: Admin@123
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+logging:
+  config: classpath:log4j2.xml

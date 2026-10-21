@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="014-single-permission-group-per-account" author="fresher-java">
+        <addColumn tableName="account">
+            <column name="permission_group_id" type="BIGINT"/>
+        </addColumn>
+
+        <!-- Preserve combined access by merging safe groups when a USER had multiple assignments. -->
+        <sql><![CDATA[
+            INSERT INTO permission_group (name, description)
+            SELECT CONCAT('Imported permissions for account ', a.id), 'Merged from previously assigned groups'
+            FROM account a
+            WHERE a.role = 'USER'
+              AND (
+                  SELECT COUNT(DISTINCT apg.group_id)
+                  FROM account_permission_group apg
+                  JOIN permission_group pg ON pg.id = apg.group_id
+                  WHERE apg.account_id = a.id
+                    AND pg.name <> 'Quản trị toàn quyền'
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM group_permission gp
+                        JOIN permission p ON p.id = gp.permission_id
+                        WHERE gp.group_id = pg.id AND p.code = 'PERMISSION_MANAGE'
+                    )
+              ) > 1
+        ]]></sql>
+
+        <sql><![CDATA[
+            INSERT INTO group_permission (group_id, permission_id)
+            SELECT merged.id, gp.permission_id
+            FROM account a
+            JOIN account_permission_group apg ON apg.account_id = a.id
+            JOIN permission_group original_group ON original_group.id = apg.group_id
+            JOIN group_permission gp ON gp.group_id = original_group.id
+            JOIN permission p ON p.id = gp.permission_id
+            JOIN permission_group merged ON merged.name = CONCAT('Imported permissions for account ', a.id)
+            WHERE a.role = 'USER'
+              AND original_group.name <> 'Quản trị toàn quyền'
+              AND p.code <> 'PERMISSION_MANAGE'
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM group_permission restricted_gp
+                  JOIN permission restricted_permission ON restricted_permission.id = restricted_gp.permission_id
+                  WHERE restricted_gp.group_id = original_group.id
+                    AND restricted_permission.code = 'PERMISSION_MANAGE'
+              )
+              AND (
+                  SELECT COUNT(DISTINCT eligible.group_id)
+                  FROM account_permission_group eligible
+                  JOIN permission_group eligible_group ON eligible_group.id = eligible.group_id
+                  WHERE eligible.account_id = a.id
+                    AND eligible_group.name <> 'Quản trị toàn quyền'
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM group_permission admin_gp
+                        JOIN permission admin_permission ON admin_permission.id = admin_gp.permission_id
+                        WHERE admin_gp.group_id = eligible_group.id
+                          AND admin_permission.code = 'PERMISSION_MANAGE'
+                    )
+              ) > 1
+            GROUP BY merged.id, gp.permission_id
+        ]]></sql>
+
+        <sql><![CDATA[
+            UPDATE account a
+            SET permission_group_id = (
+                SELECT CASE
+                    WHEN COUNT(DISTINCT apg.group_id) > 1 THEN
+                        (SELECT merged.id FROM permission_group merged
+                         WHERE merged.name = CONCAT('Imported permissions for account ', a.id))
+                    ELSE MIN(apg.group_id)
+                END
+                FROM account_permission_group apg
+                JOIN permission_group pg ON pg.id = apg.group_id
+                WHERE apg.account_id = a.id
+                  AND pg.name <> 'Quản trị toàn quyền'
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM group_permission gp
+                      JOIN permission p ON p.id = gp.permission_id
+                      WHERE gp.group_id = pg.id AND p.code = 'PERMISSION_MANAGE'
+                  )
+            )
+            WHERE a.role = 'USER'
+        ]]></sql>
+
+        <sql><![CDATA[
+            UPDATE account a
+            SET permission_group_id = (
+                SELECT MIN(pg.id) FROM permission_group pg WHERE pg.name = 'Quản trị toàn quyền'
+            )
+            WHERE a.role = 'ADMIN'
+        ]]></sql>
+
+        <!-- Newly seeded groups may not exist until CommandLineRunner; the seeder fills remaining nulls. -->
+        <addForeignKeyConstraint
+                baseTableName="account"
+                baseColumnNames="permission_group_id"
+                referencedTableName="permission_group"
+                referencedColumnNames="id"
+                constraintName="fk_account_permission_group"/>
+
+        <dropTable tableName="account_permission_group"/>
+    </changeSet>
+</databaseChangeLog>

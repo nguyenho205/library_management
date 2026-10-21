@@ -1,0 +1,14 @@
+package com.fresher.library.dto.request;
+
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+
+@Data
+public class LoginRequest {
+
+    @NotBlank(message = "Email khong duoc de trong")
+    private String email;
+
+    @NotBlank(message = "Mat khau khong duoc de trong")
+    private String password;
+}

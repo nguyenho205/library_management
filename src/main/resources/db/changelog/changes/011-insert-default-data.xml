@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Dong du lieu mac dinh cho system_config (id=1, maintenance tat) -->
+    <changeSet id="011-insert-default-system-config" author="fresher-java">
+        <insert tableName="system_config">
+            <column name="id" valueNumeric="1"/>
+            <column name="maintenance_mode" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <!--
+      Tai khoan Admin mac dinh duoc TAO TU DONG luc app khoi dong boi DataSeeder.java
+      (can ma hoa password bang BCryptPasswordEncoder luc runtime nen khong insert cung Liquibase).
+      Email: admin@library.local / Password: Admin@123 (xem application.yml: app.default-admin)
+    -->
+</databaseChangeLog>

@@ -1,0 +1,19 @@
+target/
+*.class
+*.log
+logs/
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Local private config
+src/main/resources/application-local.yml
+application-local.yml
+run.ps1
+run.bat
+
+# Frontend artifacts
+node_modules/
+dist/
+
