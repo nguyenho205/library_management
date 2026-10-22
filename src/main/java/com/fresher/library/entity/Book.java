@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -54,6 +56,7 @@ public class Book {
 
     /** Trang thai phat hanh: IN_CIRCULATION (dang phat hanh/luu hanh), DISCONTINUED (ngung luu hanh) */
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(nullable = false, length = 30)
     @Builder.Default
     private BookStatus status = BookStatus.IN_CIRCULATION;

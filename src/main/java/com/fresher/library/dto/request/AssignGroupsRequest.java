@@ -6,6 +6,6 @@ import lombok.Data;
 @Data
 public class AssignGroupsRequest {
 
-    @NotNull(message = "groupId khong duoc de trong")
+    @NotNull(message = "Mã nhóm quyền (groupId) không được để trống.")
     private Long groupId;
 }

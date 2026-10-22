@@ -9,10 +9,10 @@ import java.time.LocalDate;
 @Data
 public class MemberUpdateRequest {
 
-    @NotBlank(message = "Ho ten khong duoc de trong")
+    @NotBlank(message = "Họ tên không được để trống.")
     private String fullName;
 
-    @Past(message = "Ngay sinh phai la ngay trong qua khu")
+    @Past(message = "Ngày sinh phải là ngày trong quá khứ.")
     private LocalDate dateOfBirth;
 
     private String phone;

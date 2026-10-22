@@ -55,7 +55,7 @@ public class MemberServiceImpl implements MemberService {
                                                 LocalDate dobFrom, LocalDate dobTo, Boolean enabled, int page, int size) {
         // Validate khoang ngay: tu phai <= den (yeu cau de bai: "Check validation khi nhap ngay khong dung")
         if (dobFrom != null && dobTo != null && dobFrom.isAfter(dobTo)) {
-            throw new BadRequestException("Ngay bat dau (dobFrom) phai truoc hoac bang ngay ket thuc (dobTo)");
+            throw new BadRequestException("Ngày bắt đầu (dobFrom) phải trước hoặc bằng ngày kết thúc (dobTo)");
         }
 
         int safeSize = Math.min(size <= 0 ? MAX_PAGE_SIZE : size, MAX_PAGE_SIZE);
@@ -75,7 +75,7 @@ public class MemberServiceImpl implements MemberService {
     @Override
     public MemberResponse getByEmail(String email) {
         Member member = memberRepository.findByAccount_Email(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay ho so member cho email: " + email));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hồ sơ thành viên cho email: " + email));
         return toResponse(member);
     }
 
@@ -84,7 +84,7 @@ public class MemberServiceImpl implements MemberService {
     public MemberResponse create(RegisterRequest request) {
         // Admin tao truc tiep member moi: khong can qua buoc xac thuc email (khac voi tu dang ky)
         if (accountRepository.existsByEmail(request.getEmail())) {
-            throw new BadRequestException("Email nay da duoc su dung");
+            throw new BadRequestException("Email này đã được sử dụng");
         }
         Account account = Account.builder()
                 .email(request.getEmail())
@@ -189,7 +189,7 @@ public class MemberServiceImpl implements MemberService {
 
     private Member findMemberOrThrow(Long id) {
         return memberRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay member voi id=" + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thành viên với id=" + id));
     }
 
     private MemberResponse toResponse(Member member) {

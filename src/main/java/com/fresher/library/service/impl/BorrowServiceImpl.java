@@ -45,22 +45,22 @@ public class BorrowServiceImpl implements BorrowService {
     public BorrowRecordResponse borrowBook(String email, Long bookId) {
         // Dung pessimistic lock tren Member de tranh race condition (vd nguoi dung bam 2 lan cung luc)
         Member member = memberRepository.findByAccount_EmailWithLock(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay ho so member cho tai khoan dang nhap"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hồ sơ thành viên cho tài khoản đang đăng nhập."));
 
         // Rule: 1 user chi duoc muon 1 loai sach (dang muon 1 cuon) tai 1 thoi diem
         if (borrowRecordRepository.existsByMember_IdAndStatus(member.getId(), BorrowStatus.BORROWED)) {
-            throw new BadRequestException("Ban dang muon 1 cuon sach khac. Vui long tra sach truoc khi muon sach moi.");
+            throw new BadRequestException("Bạn đang mượn một cuốn sách khác. Vui lòng trả sách trước khi mượn sách mới.");
         }
 
         Book book = bookRepository.findById(bookId)
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay sach voi id=" + bookId));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sách với mã ID=" + bookId));
 
         if (book.getStatus() == BookStatus.DISCONTINUED) {
-            throw new BadRequestException("Sach \"" + book.getTitle() + "\" da ngung luu hanh, khong the muon");
+            throw new BadRequestException("Sách \"" + book.getTitle() + "\" đã ngừng lưu hành, không thể mượn.");
         }
 
         if (book.getQuantityAvailable() <= 0) {
-            throw new BadRequestException("Sach \"" + book.getTitle() + "\" hien da het, khong con de muon");
+            throw new BadRequestException("Sách \"" + book.getTitle() + "\" hiện đã hết, không còn để mượn.");
         }
 
         book.setQuantityAvailable(book.getQuantityAvailable() - 1);
@@ -87,13 +87,13 @@ public class BorrowServiceImpl implements BorrowService {
         Member member = getMemberByEmail(email);
 
         BorrowRecord record = borrowRecordRepository.findById(borrowRecordId)
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay phieu muon voi id=" + borrowRecordId));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phiếu mượn với mã ID=" + borrowRecordId));
 
         if (!record.getMember().getId().equals(member.getId())) {
-            throw new ForbiddenException("Ban khong co quyen tra phieu muon nay");
+            throw new ForbiddenException("Bạn không có quyền trả phiếu mượn này.");
         }
         if (record.getStatus() == BorrowStatus.RETURNED) {
-            throw new BadRequestException("Phieu muon nay da duoc tra truoc do");
+            throw new BadRequestException("Phiếu mượn này đã được trả trước đó.");
         }
 
         record.setReturnDate(LocalDate.now());
@@ -119,7 +119,7 @@ public class BorrowServiceImpl implements BorrowService {
 
     private Member getMemberByEmail(String email) {
         return memberRepository.findByAccount_Email(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay ho so member cho tai khoan dang nhap"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hồ sơ thành viên cho tài khoản đang đăng nhập."));
     }
 
     private BorrowRecordResponse toResponse(BorrowRecord r) {

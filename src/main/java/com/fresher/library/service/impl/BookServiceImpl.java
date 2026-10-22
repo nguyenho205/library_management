@@ -70,10 +70,10 @@ public class BookServiceImpl implements BookService {
     @Transactional
     public BookResponse create(BookRequest request) {
         if (bookRepository.existsByIsbn(request.getIsbn())) {
-            throw new BadRequestException("ISBN nay da ton tai trong he thong");
+            throw new BadRequestException("ISBN này đã tồn tại trong hệ thống.");
         }
         Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay the loai sach"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thể loại sách."));
 
         Book book = Book.builder()
                 .isbn(request.getIsbn())
@@ -96,15 +96,15 @@ public class BookServiceImpl implements BookService {
         Book book = findBookOrThrow(id);
 
         if (!book.getIsbn().equals(request.getIsbn()) && bookRepository.existsByIsbn(request.getIsbn())) {
-            throw new BadRequestException("ISBN nay da ton tai trong he thong");
+            throw new BadRequestException("ISBN này đã tồn tại trong hệ thống.");
         }
         Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay the loai sach"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thể loại sách."));
 
         int borrowed = book.getQuantityTotal() - book.getQuantityAvailable();
         if (request.getQuantityTotal() < borrowed) {
-            throw new BadRequestException("So luong moi (" + request.getQuantityTotal()
-                    + ") khong duoc nho hon so luong dang duoc muon (" + borrowed + ")");
+            throw new BadRequestException("Số lượng mới (" + request.getQuantityTotal()
+                    + ") không được nhỏ hơn số lượng đang được mượn (" + borrowed + ").");
         }
 
         book.setIsbn(request.getIsbn());
@@ -158,14 +158,14 @@ public class BookServiceImpl implements BookService {
     @Transactional
     public int importFromCsv(MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new BadRequestException("File rong hoac khong ton tai");
+            throw new BadRequestException("Tệp tải lên rỗng hoặc không tồn tại.");
         }
         if (file.getSize() > MAX_FILE_SIZE_BYTES) {
-            throw new BadRequestException("File vuot qua dung luong cho phep (toi da 5MB)");
+            throw new BadRequestException("Tệp vượt quá dung lượng cho phép (tối đa 5MB).");
         }
         String filename = file.getOriginalFilename();
         if (filename == null || !filename.toLowerCase().endsWith(".csv")) {
-            throw new BadRequestException("Chi ho tro file dinh dang .csv");
+            throw new BadRequestException("Hệ thống chỉ hỗ trợ tệp định dạng .csv.");
         }
 
         int importedCount = 0;
@@ -175,7 +175,7 @@ public class BookServiceImpl implements BookService {
                 importedCount += importOneRow(record);
             }
         } catch (IOException e) {
-            throw new BadRequestException("Khong doc duoc noi dung file CSV: " + e.getMessage());
+            throw new BadRequestException("Không đọc được nội dung tệp CSV: " + e.getMessage());
         }
         log.info("Import CSV hoan tat: {} sach moi duoc them", importedCount);
         return importedCount;
@@ -225,7 +225,7 @@ public class BookServiceImpl implements BookService {
 
     private Book findBookOrThrow(Long id) {
         return bookRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay sach voi id=" + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sách với mã ID=" + id));
     }
 
     private BookResponse toResponse(Book book) {
