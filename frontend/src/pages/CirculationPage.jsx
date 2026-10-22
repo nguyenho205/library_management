@@ -48,7 +48,7 @@ export default function CirculationPage() {
   const loadBooks = useCallback(async () => {
     setLoadingBooks(true)
     try {
-      const params = { page, size: 10 }
+      const params = { page, size: 10, status: 'IN_CIRCULATION' }
       if (appliedTitle) params.title = appliedTitle
       setBooks(await booksApi.search(params))
     } catch (err) {

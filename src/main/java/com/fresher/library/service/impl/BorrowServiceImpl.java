@@ -2,6 +2,7 @@ package com.fresher.library.service.impl;
 
 import com.fresher.library.dto.response.BorrowRecordResponse;
 import com.fresher.library.entity.Book;
+import com.fresher.library.entity.BookStatus;
 import com.fresher.library.entity.BorrowRecord;
 import com.fresher.library.entity.BorrowStatus;
 import com.fresher.library.entity.Member;
@@ -42,7 +43,9 @@ public class BorrowServiceImpl implements BorrowService {
     @Override
     @Transactional
     public BorrowRecordResponse borrowBook(String email, Long bookId) {
-        Member member = getMemberByEmail(email);
+        // Dung pessimistic lock tren Member de tranh race condition (vd nguoi dung bam 2 lan cung luc)
+        Member member = memberRepository.findByAccount_EmailWithLock(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay ho so member cho tai khoan dang nhap"));
 
         // Rule: 1 user chi duoc muon 1 loai sach (dang muon 1 cuon) tai 1 thoi diem
         if (borrowRecordRepository.existsByMember_IdAndStatus(member.getId(), BorrowStatus.BORROWED)) {
@@ -51,6 +54,10 @@ public class BorrowServiceImpl implements BorrowService {
 
         Book book = bookRepository.findById(bookId)
                 .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay sach voi id=" + bookId));
+
+        if (book.getStatus() == BookStatus.DISCONTINUED) {
+            throw new BadRequestException("Sach \"" + book.getTitle() + "\" da ngung luu hanh, khong the muon");
+        }
 
         if (book.getQuantityAvailable() <= 0) {
             throw new BadRequestException("Sach \"" + book.getTitle() + "\" hien da het, khong con de muon");
@@ -103,10 +110,11 @@ public class BorrowServiceImpl implements BorrowService {
 
     @Override
     public List<BorrowRecordResponse> getMyBorrowHistory(String email) {
-        Member member = getMemberByEmail(email);
-        return member.getBorrowRecords().stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+        return memberRepository.findByAccount_Email(email)
+                .map(m -> m.getBorrowRecords().stream()
+                        .map(this::toResponse)
+                        .collect(Collectors.toList()))
+                .orElse(java.util.Collections.emptyList());
     }
 
     private Member getMemberByEmail(String email) {

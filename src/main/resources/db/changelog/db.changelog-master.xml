@@ -19,5 +19,6 @@
     <include file="db/changelog/changes/012-create-permission-tables.xml" relativeToChangelogFile="false"/>
     <include file="db/changelog/changes/013-add-email-verification-code.xml" relativeToChangelogFile="false"/>
     <include file="db/changelog/changes/014-single-permission-group-per-account.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/015-add-book-status.xml" relativeToChangelogFile="false"/>
 
 </databaseChangeLog>

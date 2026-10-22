@@ -4,6 +4,7 @@ import com.fresher.library.dto.request.BookRequest;
 import com.fresher.library.dto.response.ApiResponse;
 import com.fresher.library.dto.response.BookResponse;
 import com.fresher.library.dto.response.PageResponse;
+import com.fresher.library.entity.BookStatus;
 import com.fresher.library.service.BookService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -15,10 +16,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Chuc nang: QUAN LY SACH
- * - GET  /api/books        : search phan trang theo title/isbn/author/category (toi da 10 record/trang) - moi user da dang nhap deu xem duoc
+ * - GET  /api/books        : search phan trang theo title/isbn/author/category/status - moi user da dang nhap deu xem duoc
  * - GET  /api/books/{id}   : xem chi tiet 1 sach
  * - POST /api/books        : them sach moi (chi ADMIN)
  * - PUT  /api/books/{id}   : sua sach (chi ADMIN)
+ * - PUT  /api/books/{id}/discontinue : ngung luu hanh sach (chi ADMIN)
+ * - PUT  /api/books/{id}/restore     : tai phat hanh sach (chi ADMIN)
  * - DELETE /api/books/{id} : xoa sach (chi ADMIN)
  * - POST /api/books/import : import danh sach sach tu file CSV, gioi han 5MB (chi ADMIN)
  * (Phan quyen chi tiet cau hinh o SecurityConfig)
@@ -26,7 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/books")
 @RequiredArgsConstructor
-@Tag(name = "Book", description = "Quan ly sach: tim kiem, them, sua, xoa, import CSV")
+@Tag(name = "Book", description = "Quan ly sach: tim kiem, them, sua, ngung luu hanh, tai phat hanh, xoa, import CSV")
 public class BookController {
 
     private final BookService bookService;
@@ -38,9 +41,10 @@ public class BookController {
             @RequestParam(required = false) String isbn,
             @RequestParam(required = false) String author,
             @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) BookStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        var result = bookService.search(title, isbn, author, categoryId, page, size);
+        var result = bookService.search(title, isbn, author, categoryId, status, page, size);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
@@ -63,6 +67,20 @@ public class BookController {
                                                               @Valid @RequestBody BookRequest request) {
         BookResponse updated = bookService.update(id, request);
         return ResponseEntity.ok(ApiResponse.success("Cap nhat sach thanh cong", updated));
+    }
+
+    @PutMapping("/{id}/discontinue")
+    @PreAuthorize("hasAuthority('BOOK_UPDATE')")
+    public ResponseEntity<ApiResponse<BookResponse>> discontinue(@PathVariable Long id) {
+        BookResponse updated = bookService.discontinue(id);
+        return ResponseEntity.ok(ApiResponse.success("Da chuyen sach sang trang thai ngung luu hanh", updated));
+    }
+
+    @PutMapping("/{id}/restore")
+    @PreAuthorize("hasAuthority('BOOK_UPDATE')")
+    public ResponseEntity<ApiResponse<BookResponse>> restore(@PathVariable Long id) {
+        BookResponse updated = bookService.restore(id);
+        return ResponseEntity.ok(ApiResponse.success("Da khoi phuc luu hanh sach thanh cong", updated));
     }
 
     @DeleteMapping("/{id}")

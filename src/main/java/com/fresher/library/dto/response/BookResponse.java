@@ -23,4 +23,5 @@ public class BookResponse {
     private Long categoryId;
     private List<String> authorNames;
     private LocalDateTime createdAt;
+    private String status;
 }
