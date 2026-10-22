@@ -61,6 +61,9 @@ public class Book {
     @Builder.Default
     private BookStatus status = BookStatus.IN_CIRCULATION;
 
+    @Column(name = "img_url", length = 1000)
+    private String imgUrl;
+
     // Quan he N-1: nhieu Book thuoc 1 Category
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")

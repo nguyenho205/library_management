@@ -27,4 +27,7 @@ public class BookRequest {
 
     /** Danh sach ten tac gia - he thong se tu tao Author moi neu chua ton tai (quan he N-N) */
     private List<String> authorNames;
+
+    /** Duong dan anh bia sach (URL) */
+    private String imgUrl;
 }

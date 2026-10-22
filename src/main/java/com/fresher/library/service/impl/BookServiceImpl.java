@@ -30,12 +30,19 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.fresher.library.entity.BookStatus;
+import com.fresher.library.entity.BorrowRecord;
+import com.fresher.library.entity.BorrowStatus;
+import com.fresher.library.entity.Member;
+import com.fresher.library.repository.MemberRepository;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -49,6 +56,7 @@ public class BookServiceImpl implements BookService {
     private final CategoryRepository categoryRepository;
     private final AuthorRepository authorRepository;
     private final BorrowRecordRepository borrowRecordRepository;
+    private final MemberRepository memberRepository;
 
     @Override
     public PageResponse<BookResponse> search(String title, String isbn, String author, Long categoryId, BookStatus status, int page, int size) {
@@ -59,6 +67,131 @@ public class BookServiceImpl implements BookService {
                 BookSpecification.withFilters(title, isbn, author, categoryId, status), pageRequest);
 
         return PageResponse.from(result.map(this::toResponse));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BookResponse> getRecommendations(String email, String tab, int limit) {
+        int safeLimit = limit <= 0 ? 4 : Math.min(limit, 10);
+        String activeTab = tab != null ? tab.toUpperCase() : "CATEGORY";
+
+        // 1. Thu thap lich su muon sach cua member de phan tich so thich
+        List<BorrowRecord> history = new ArrayList<>();
+        if (StringUtils.hasText(email)) {
+            memberRepository.findByAccount_Email(email)
+                    .ifPresent(m -> {
+                        if (m.getBorrowRecords() != null) {
+                            history.addAll(m.getBorrowRecords());
+                        }
+                    });
+        }
+
+        // Sap xep lich su theo ngay muon moi nhat len dau
+        history.sort((a, b) -> {
+            if (a.getBorrowDate() == null || b.getBorrowDate() == null) return 0;
+            return b.getBorrowDate().compareTo(a.getBorrowDate());
+        });
+
+        // 2. Tinh trong so the loai va tac gia tu lich su doc
+        Set<Long> currentlyBorrowedBookIds = new HashSet<>();
+        Set<Long> allBorrowedBookIds = new HashSet<>();
+        Map<Long, Integer> categoryScores = new HashMap<>();
+        Map<Long, Integer> authorScores = new HashMap<>();
+
+        for (int i = 0; i < history.size(); i++) {
+            BorrowRecord record = history.get(i);
+            Book b = record.getBook();
+            if (b == null) continue;
+
+            allBorrowedBookIds.add(b.getId());
+            if (record.getStatus() == BorrowStatus.BORROWED) {
+                currentlyBorrowedBookIds.add(b.getId());
+            }
+
+            int recencyWeight = (i < 5) ? 3 : 1;
+
+            if (b.getCategory() != null) {
+                categoryScores.merge(b.getCategory().getId(), recencyWeight * 10, Integer::sum);
+            }
+
+            if (b.getAuthors() != null) {
+                for (Author a : b.getAuthors()) {
+                    authorScores.merge(a.getId(), recencyWeight * 8, Integer::sum);
+                }
+            }
+        }
+
+        // Dem tong luot muon toan he thong
+        Map<Long, Long> globalBorrowCounts = borrowRecordRepository.findAll().stream()
+                .filter(r -> r.getBook() != null)
+                .collect(Collectors.groupingBy(r -> r.getBook().getId(), Collectors.counting()));
+
+        // 3. Loc danh sach ung vien: BAT BUOC dang phat hanh (IN_CIRCULATION), khong lay sach DISCONTINUED
+        List<Book> candidates = bookRepository.findAll().stream()
+                .filter(b -> b.getStatus() == null || b.getStatus() == BookStatus.IN_CIRCULATION)
+                .filter(b -> !currentlyBorrowedBookIds.contains(b.getId()))
+                .collect(Collectors.toList());
+
+        // 4. Cham diem phu hop theo tung Tab
+        class ScoredBook {
+            final Book book;
+            final double score;
+
+            ScoredBook(Book book, double score) {
+                this.book = book;
+                this.score = score;
+            }
+        }
+
+        List<ScoredBook> scored = new ArrayList<>();
+
+        for (Book b : candidates) {
+            double score = 0.0;
+
+            if ("CATEGORY".equals(activeTab)) {
+                // TAB 1: THE LOAI YEU THICH
+                if (b.getCategory() != null && categoryScores.containsKey(b.getCategory().getId())) {
+                    score += categoryScores.get(b.getCategory().getId()) * 10.0;
+                }
+                if (!allBorrowedBookIds.contains(b.getId())) score += 15.0;
+                if (b.getQuantityAvailable() != null && b.getQuantityAvailable() > 0) score += 20.0;
+            } else if ("AUTHOR".equals(activeTab)) {
+                // TAB 2: TAC GIA THUONG THEO DOI
+                if (b.getAuthors() != null) {
+                    for (Author a : b.getAuthors()) {
+                        if (authorScores.containsKey(a.getId())) {
+                            score += authorScores.get(a.getId()) * 10.0;
+                        }
+                    }
+                }
+                if (!allBorrowedBookIds.contains(b.getId())) score += 15.0;
+                if (b.getQuantityAvailable() != null && b.getQuantityAvailable() > 0) score += 20.0;
+            } else {
+                // TAB 3: SACH DUOC YEU THICH (MUON NHIEU NHAT TOAN HE THONG)
+                long borrows = globalBorrowCounts.getOrDefault(b.getId(), 0L);
+                score += borrows * 10.0;
+                if (!allBorrowedBookIds.contains(b.getId())) score += 5.0;
+                if (b.getQuantityAvailable() != null && b.getQuantityAvailable() > 0) score += 10.0;
+            }
+
+            scored.add(new ScoredBook(b, score));
+        }
+
+        // 5. Sap xep giam dan theo diem so
+        scored.sort((a, b) -> {
+            int cmp = Double.compare(b.score, a.score);
+            if (cmp != 0) return cmp;
+            if (a.book.getCreatedAt() != null && b.book.getCreatedAt() != null) {
+                return b.book.getCreatedAt().compareTo(a.book.getCreatedAt());
+            }
+            return Long.compare(b.book.getId(), a.book.getId());
+        });
+
+        // 6. Lay top safeLimit cuon va tra ve BookResponse
+        return scored.stream()
+                .limit(safeLimit)
+                .map(s -> toResponse(s.book))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -81,6 +214,7 @@ public class BookServiceImpl implements BookService {
                 .description(request.getDescription())
                 .quantityTotal(request.getQuantityTotal())
                 .quantityAvailable(request.getQuantityTotal())
+                .imgUrl(request.getImgUrl())
                 .category(category)
                 .authors(resolveAuthors(request.getAuthorNames()))
                 .build();
@@ -112,6 +246,7 @@ public class BookServiceImpl implements BookService {
         book.setDescription(request.getDescription());
         book.setQuantityAvailable(request.getQuantityTotal() - borrowed);
         book.setQuantityTotal(request.getQuantityTotal());
+        book.setImgUrl(request.getImgUrl());
         book.setCategory(category);
         book.setAuthors(resolveAuthors(request.getAuthorNames()));
 
@@ -242,6 +377,7 @@ public class BookServiceImpl implements BookService {
                         book.getAuthors().stream().map(Author::getName).collect(Collectors.toList()))
                 .createdAt(book.getCreatedAt())
                 .status(book.getStatus() != null ? book.getStatus().name() : BookStatus.IN_CIRCULATION.name())
+                .imgUrl(book.getImgUrl())
                 .build();
     }
 }

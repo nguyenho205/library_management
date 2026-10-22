@@ -43,9 +43,30 @@ public class BookController {
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) BookStatus status,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        var result = bookService.search(title, isbn, author, categoryId, status, page, size);
+            @RequestParam(defaultValue = "10") int size,
+            org.springframework.security.core.Authentication authentication) {
+        BookStatus effectiveStatus = status;
+        boolean isStaff = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")
+                        || a.getAuthority().equals("BOOK_UPDATE")
+                        || a.getAuthority().equals("BOOK_CREATE"));
+        // Neu la doc gia binh thuong, mac dinh chi hien thi sach DANG PHAT HANH
+        if (!isStaff && effectiveStatus == null) {
+            effectiveStatus = BookStatus.IN_CIRCULATION;
+        }
+        var result = bookService.search(title, isbn, author, categoryId, effectiveStatus, page, size);
         return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
+    @GetMapping("/recommendations")
+    @PreAuthorize("hasAuthority('BOOK_VIEW')")
+    public ResponseEntity<ApiResponse<java.util.List<BookResponse>>> getRecommendations(
+            org.springframework.security.core.Authentication authentication,
+            @RequestParam(defaultValue = "CATEGORY") String tab,
+            @RequestParam(defaultValue = "4") int limit) {
+        String email = authentication != null ? authentication.getName() : null;
+        java.util.List<BookResponse> recommendations = bookService.getRecommendations(email, tab, limit);
+        return ResponseEntity.ok(ApiResponse.success(recommendations));
     }
 
     @GetMapping("/{id}")
