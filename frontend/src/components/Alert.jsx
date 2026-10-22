@@ -2,13 +2,19 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AlertCircleIcon, CheckCircleIcon, InfoIcon } from './Icons'
 
-const DEFAULT_TITLES = {
-  success: 'Thao tác thành công',
-  error: 'Đã xảy ra lỗi',
-  warning: 'Cảnh báo hệ thống',
+const BADGE_TITLES = {
+  success: 'Thành công',
+  error: 'Lỗi',
+  warning: 'Cảnh báo',
   info: 'Thông báo',
 }
 
+/**
+ * Hệ thống Alert & Thông báo chính thức của hệ thống (Dynamic Island Capsule HUD)
+ * - Nổi ở đỉnh giữa màn hình (Top-Center) với hiệu ứng kính mờ (blur), viền phát quang neon theo nhịp thở (breathing beacon)
+ * - Tự động ẩn sau khoảng thời gian `duration`, tạm dừng khi rê chuột (pause on hover)
+ * - Hỗ trợ cả chế độ nổi (Floating HUD - mặc định khi có onClose) và trong trang (Inline Alert)
+ */
 export default function Alert({
   type = 'info',
   title,
@@ -17,22 +23,26 @@ export default function Alert({
   duration = 4500,
   inline = false,
   floating,
+  actionLabel,
+  onAction,
 }) {
   if (!children) return null
 
-  // Tự động phân loại: Nếu có onClose và không chỉ định inline thì hiển thị dạng Floating Toast Dock
+  // Tự động phân loại: Nếu có onClose và không chỉ định inline thì hiển thị dạng Floating HUD
   const isFloating = floating !== undefined ? floating : Boolean(onClose && !inline)
 
   if (isFloating) {
     return (
-      <FloatingToast
+      <DynamicIslandHUD
         type={type}
         title={title}
         onClose={onClose}
         duration={duration}
+        actionLabel={actionLabel}
+        onAction={onAction}
       >
         {children}
-      </FloatingToast>
+      </DynamicIslandHUD>
     )
   }
 
@@ -43,50 +53,53 @@ export default function Alert({
   )
 }
 
-function FloatingToast({ type, title, children, onClose, duration }) {
+function DynamicIslandHUD({
+  type,
+  title,
+  children,
+  onClose,
+  duration,
+  actionLabel,
+  onAction,
+}) {
   const [isClosing, setIsClosing] = useState(false)
-  const [progress, setProgress] = useState(100)
   const [isPaused, setIsPaused] = useState(false)
   const startTimeRef = useRef(Date.now())
   const remainingTimeRef = useRef(duration)
-  const progressIntervalRef = useRef(null)
+  const timerRef = useRef(null)
 
-  const displayTitle = title || DEFAULT_TITLES[type] || 'Thông báo'
+  const badgeText = title || BADGE_TITLES[type] || 'Thông báo'
 
   const handleClose = () => {
     setIsClosing(true)
     setTimeout(() => {
       if (onClose) onClose()
-    }, 200)
+    }, 220)
   }
 
   useEffect(() => {
     if (!duration || duration <= 0) return
 
-    const updateProgress = () => {
-      if (isPaused) return
-      const elapsed = Date.now() - startTimeRef.current
-      const left = Math.max(0, remainingTimeRef.current - elapsed)
-      const pct = (left / duration) * 100
-      setProgress(pct)
-      if (left <= 0) {
-        clearInterval(progressIntervalRef.current)
+    const scheduleTimer = () => {
+      clearTimeout(timerRef.current)
+      timerRef.current = setTimeout(() => {
         handleClose()
-      }
+      }, remainingTimeRef.current)
     }
 
-    startTimeRef.current = Date.now()
-    progressIntervalRef.current = setInterval(updateProgress, 35)
-
-    return () => {
-      clearInterval(progressIntervalRef.current)
+    if (!isPaused) {
+      startTimeRef.current = Date.now()
+      scheduleTimer()
     }
+
+    return () => clearTimeout(timerRef.current)
   }, [duration, isPaused])
 
   const handleMouseEnter = () => {
     setIsPaused(true)
     const elapsed = Date.now() - startTimeRef.current
     remainingTimeRef.current = Math.max(0, remainingTimeRef.current - elapsed)
+    clearTimeout(timerRef.current)
   }
 
   const handleMouseLeave = () => {
@@ -96,44 +109,61 @@ function FloatingToast({ type, title, children, onClose, duration }) {
 
   const icon =
     type === 'error' ? (
-      <AlertCircleIcon width={18} height={18} />
+      <AlertCircleIcon width={16} height={16} />
     ) : type === 'success' ? (
-      <CheckCircleIcon width={18} height={18} />
+      <CheckCircleIcon width={16} height={16} />
     ) : (
-      <InfoIcon width={18} height={18} />
+      <InfoIcon width={16} height={16} />
     )
 
   const toastContent = (
-    <div className="toast-floating-container" aria-live="polite">
+    <div className="dynamic-island-container" aria-live="assertive">
       <div
-        className={`toast-dock toast-${type} ${isClosing ? 'closing' : ''}`}
+        className={`dynamic-island-hud island-${type} ${isClosing ? 'closing' : ''}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         role="alert"
       >
-        <div className="toast-icon-box">{icon}</div>
-        <div className="toast-body">
-          <div className="toast-title">{displayTitle}</div>
-          <div className="toast-message">{children}</div>
+        {/* Glow backdrop aura */}
+        <div className="island-aura" />
+
+        {/* Pulsing beacon / Icon circle */}
+        <div className="island-beacon-wrap">
+          <span className="island-pulsing-ring" />
+          <div className="island-icon-disc">{icon}</div>
         </div>
+
+        {/* Text body */}
+        <div className="island-content">
+          <span className="island-badge">{badgeText}</span>
+          <span className="island-text">{children}</span>
+        </div>
+
+        {/* Optional Action Button */}
+        {actionLabel && (
+          <button
+            type="button"
+            className="island-action-btn"
+            onClick={() => {
+              if (onAction) onAction()
+              handleClose()
+            }}
+          >
+            {actionLabel}
+          </button>
+        )}
+
+        {/* Close Button */}
         {onClose && (
           <button
             type="button"
-            className="toast-close-btn"
+            className="island-close-btn"
             onClick={handleClose}
             aria-label="Đóng thông báo"
-            title="Đóng thông báo"
+            title="Đóng"
           >
             ×
           </button>
-        )}
-        {duration > 0 && (
-          <div className="toast-progress-track">
-            <div
-              className="toast-progress-bar"
-              style={{ transform: `scaleX(${progress / 100})` }}
-            />
-          </div>
         )}
       </div>
     </div>
@@ -165,10 +195,10 @@ function InlineAlert({ type, title, children, onClose }) {
       {onClose && (
         <button
           type="button"
-          className="toast-close-btn"
+          className="island-close-btn"
           onClick={onClose}
           aria-label="Đóng thông báo"
-          style={{ width: 20, height: 20, marginLeft: 'auto' }}
+          style={{ width: 20, height: 20, marginLeft: 'auto', background: 'transparent', color: 'inherit' }}
         >
           ×
         </button>

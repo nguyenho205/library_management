@@ -21,11 +21,12 @@ import {
   RefreshIcon,
 } from '../components/Icons'
 
-const EMPTY_FORM = { isbn: '', title: '', description: '', quantityTotal: 1, categoryId: '', authorNames: '' }
+const EMPTY_FORM = { isbn: '', title: '', description: '', quantityTotal: 1, categoryId: '', authorNames: '', imgUrl: '' }
 const EMPTY_FILTERS = { title: '', isbn: '', author: '', categoryId: '' }
 
 export default function BooksPage({ adminMode = false }) {
-  const { can, isAdmin } = useAuth()
+  const { can, isAdmin, isLibrarian: authIsLibrarian, user } = useAuth() || {}
+  const isLibrarian = Boolean(authIsLibrarian || isAdmin || user?.role === 'ADMIN')
   const canCreate = adminMode && can('BOOK_CREATE')
   const canImport = adminMode && can('BOOK_IMPORT')
   const canEdit = adminMode && can('BOOK_UPDATE')
@@ -132,6 +133,7 @@ export default function BooksPage({ adminMode = false }) {
       quantityTotal: book.quantityTotal,
       categoryId: book.categoryId || '',
       authorNames: (book.authorNames || []).join(', '),
+      imgUrl: book.imgUrl || '',
     })
 
   const hasActiveFilters = Boolean(applied.title || applied.isbn || applied.author || applied.categoryId)
@@ -308,16 +310,32 @@ export default function BooksPage({ adminMode = false }) {
                     <tr key={b.id}>
                       <td className="data">{b.isbn}</td>
                       <td>
-                        <div
-                          className="title"
-                          style={{ cursor: b.description ? 'pointer' : 'default' }}
-                          onClick={() => b.description && setViewingBook(b)}
-                          title={b.description ? 'Bấm để xem mô tả chi tiết' : undefined}
-                        >
-                          {b.title}
-                        </div>
-                        <div className="book-authors">
-                          {(b.authorNames || []).join(', ') || 'Chưa cập nhật tác giả'}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          {b.imgUrl ? (
+                            <img
+                              src={b.imgUrl}
+                              alt={b.title}
+                              style={{ width: 34, height: 46, objectFit: 'cover', borderRadius: 4, flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }}
+                              onError={(e) => { e.currentTarget.style.display = 'none' }}
+                            />
+                          ) : (
+                            <div style={{ width: 34, height: 46, borderRadius: 4, background: 'var(--color-bg-subtle)', border: '1px solid var(--color-border-default)', display: 'grid', placeItems: 'center', color: 'var(--color-text-tertiary)', flexShrink: 0 }}>
+                              <BookIcon width={16} height={16} />
+                            </div>
+                          )}
+                          <div>
+                            <div
+                              className="title"
+                              style={{ cursor: b.description ? 'pointer' : 'default' }}
+                              onClick={() => b.description && setViewingBook(b)}
+                              title={b.description ? 'Bấm để xem mô tả chi tiết' : undefined}
+                            >
+                              {b.title}
+                            </div>
+                            <div className="book-authors">
+                              {(b.authorNames || []).join(', ') || 'Chưa cập nhật tác giả'}
+                            </div>
+                          </div>
                         </div>
                       </td>
                       <td>
@@ -539,6 +557,7 @@ function BookFormModal({ initial, categories, onClose, onSaved }) {
       quantityTotal: Number(form.quantityTotal),
       categoryId: form.categoryId ? Number(form.categoryId) : null,
       authorNames: form.authorNames.split(',').map((s) => s.trim()).filter(Boolean),
+      imgUrl: form.imgUrl && form.imgUrl.trim() ? form.imgUrl.trim() : null,
     }
     try {
       if (isEdit) await booksApi.update(initial.id, payload)
@@ -628,6 +647,17 @@ function BookFormModal({ initial, categories, onClose, onSaved }) {
             placeholder="Robert C. Martin, Martin Fowler"
           />
           <div className="field-hint">Nếu có nhiều tác giả, ngăn cách bằng dấu phẩy (,).</div>
+        </div>
+
+        <div className="field">
+          <label htmlFor="b-img">Đường dẫn ảnh bìa sách (URL)</label>
+          <input
+            id="b-img"
+            value={form.imgUrl}
+            onChange={set('imgUrl')}
+            placeholder="https://images.unsplash.com/... hoặc link ảnh bìa"
+          />
+          <div className="field-hint">Dán link ảnh bìa sách trực tuyến để hiển thị bìa sách sống động trên giao diện.</div>
         </div>
 
         <div className="field" style={{ marginBottom: 0 }}>

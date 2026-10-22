@@ -36,7 +36,10 @@ export function AuthProvider({ children }) {
 
   const can = useCallback((code) => Boolean(user?.permissions?.includes(code)), [user])
 
-  const value = { user, isAdmin: user?.role === 'ADMIN', can, login, logout }
+  const isAdmin = user?.role === 'ADMIN'
+  const isLibrarian = user?.role === 'ADMIN' || user?.role === 'LIBRARIAN'
+
+  const value = { user, isAdmin, isLibrarian, can, login, logout }
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 

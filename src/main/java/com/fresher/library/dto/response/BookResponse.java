@@ -24,4 +24,6 @@ public class BookResponse {
     private List<String> authorNames;
     private LocalDateTime createdAt;
     private String status;
+    private String recommendationReason;
+    private String imgUrl;
 }
