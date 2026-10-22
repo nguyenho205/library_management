@@ -9,10 +9,12 @@ import java.time.LocalDate;
 
 public interface MemberService {
     PageResponse<MemberResponse> search(String fullName, String email, String bookTitle, Long bookId,
-                                         LocalDate dobFrom, LocalDate dobTo, int page, int size);
+                                         LocalDate dobFrom, LocalDate dobTo, Boolean enabled, int page, int size);
     MemberResponse getById(Long id);
     MemberResponse getByEmail(String email);
     MemberResponse create(RegisterRequest request);
     MemberResponse update(Long id, MemberUpdateRequest request);
+    MemberResponse lock(Long id);
+    MemberResponse unlock(Long id);
     void delete(Long id);
 }

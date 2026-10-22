@@ -454,6 +454,30 @@ button, input, select, textarea {
   box-shadow: var(--focus-ring-danger);
 }
 
+.btn-warn {
+  border-color: var(--color-warn-border);
+  background-color: var(--color-bg-surface);
+  color: var(--color-warn-text);
+}
+
+.btn-warn:hover {
+  background-color: var(--color-warn-bg);
+  border-color: #fcd34d;
+  color: #78350f;
+}
+
+.btn-ok {
+  border-color: var(--color-success-border);
+  background-color: var(--color-bg-surface);
+  color: var(--color-success-text);
+}
+
+.btn-ok:hover {
+  background-color: var(--color-success-bg);
+  border-color: #5eead4;
+  color: #042f2e;
+}
+
 /* Ghost / Tertiary Action */
 .btn-ghost {
   border-color: transparent;
@@ -695,6 +719,67 @@ textarea:disabled {
   font-size: 12px;
   font-weight: 600;
   color: var(--color-text-primary);
+}
+
+/* ==========================================================================
+   SEGMENTED STATUS TABS
+   ========================================================================== */
+
+.segmented-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-default);
+  padding: 4px;
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+}
+
+.segmented-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: inherit;
+}
+
+.segmented-tab:hover {
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-surface);
+}
+
+.segmented-tab.active {
+  color: var(--color-brand);
+  background-color: var(--color-bg-surface);
+  font-weight: 600;
+  box-shadow: var(--shadow-xs);
+  border-color: var(--color-border-default);
+}
+
+.segmented-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 9999px;
+  background-color: var(--color-bg-muted);
+  color: var(--color-text-secondary);
+}
+
+.segmented-tab.active .segmented-tab-count {
+  background-color: var(--color-brand-surface);
+  color: var(--color-brand);
 }
 
 /* ==========================================================================

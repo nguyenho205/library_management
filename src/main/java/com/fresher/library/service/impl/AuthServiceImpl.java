@@ -203,6 +203,10 @@ public class AuthServiceImpl implements AuthService {
         Account account = accountRepository.findByEmail(email)
                 .orElseThrow(() -> new UnauthorizedException("Tài khoản không tồn tại"));
 
+        if (!account.isEnabled()) {
+            throw new UnauthorizedException("Tài khoản đã bị khoá hoặc vô hiệu hoá");
+        }
+
         // Refresh token con han -> tu dong cap access token MOI (khong bat user login lai)
         String newAccessToken = jwtTokenProvider.generateAccessToken(account.getEmail(), account.getRole().name());
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(account.getEmail(), account.getRole().name());

@@ -41,9 +41,10 @@ public class MemberController {
             @RequestParam(required = false) Long bookId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dobFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dobTo,
+            @RequestParam(required = false) Boolean enabled,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        var result = memberService.search(fullName, email, bookTitle, bookId, dobFrom, dobTo, page, size);
+        var result = memberService.search(fullName, email, bookTitle, bookId, dobFrom, dobTo, enabled, page, size);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
@@ -66,6 +67,20 @@ public class MemberController {
                                                                 @Valid @RequestBody MemberUpdateRequest request) {
         MemberResponse updated = memberService.update(id, request);
         return ResponseEntity.ok(ApiResponse.success("Cap nhat member thanh cong", updated));
+    }
+
+    @PutMapping("/{id}/lock")
+    @PreAuthorize("hasAuthority('MEMBER_UPDATE')")
+    public ResponseEntity<ApiResponse<MemberResponse>> lock(@PathVariable Long id) {
+        MemberResponse updated = memberService.lock(id);
+        return ResponseEntity.ok(ApiResponse.success("Khoá tài khoản thành viên thành công", updated));
+    }
+
+    @PutMapping("/{id}/unlock")
+    @PreAuthorize("hasAuthority('MEMBER_UPDATE')")
+    public ResponseEntity<ApiResponse<MemberResponse>> unlock(@PathVariable Long id) {
+        MemberResponse updated = memberService.unlock(id);
+        return ResponseEntity.ok(ApiResponse.success("Mở khoá tài khoản thành viên thành công", updated));
     }
 
     @DeleteMapping("/{id}")

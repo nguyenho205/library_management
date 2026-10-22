@@ -19,4 +19,5 @@ public class MemberResponse {
     private String phone;
     private String address;
     private boolean emailVerified;
+    private boolean enabled;
 }

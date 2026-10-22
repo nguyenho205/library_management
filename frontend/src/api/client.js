@@ -63,6 +63,7 @@ client.interceptors.response.use(
         return client(originalRequest)
       } catch (refreshError) {
         clearTokens()
+        sessionStorage.setItem('auth_notice', 'Phiên làm việc đã kết thúc hoặc tài khoản của bạn đã bị xoá/vô hiệu hoá.')
         window.location.href = '/login'
         return Promise.reject(refreshError)
       }

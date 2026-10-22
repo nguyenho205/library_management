@@ -27,7 +27,8 @@ public class MemberSpecification {
                                                       String bookTitle,
                                                       Long bookId,
                                                       LocalDate dobFrom,
-                                                      LocalDate dobTo) {
+                                                      LocalDate dobTo,
+                                                      Boolean enabled) {
         return (root, query, cb) -> {
             query.distinct(true);
             var predicate = cb.conjunction();
@@ -53,6 +54,9 @@ public class MemberSpecification {
             }
             if (dobTo != null) {
                 predicate = cb.and(predicate, cb.lessThanOrEqualTo(root.get("dateOfBirth"), dobTo));
+            }
+            if (enabled != null) {
+                predicate = cb.and(predicate, cb.equal(root.get("account").get("enabled"), enabled));
             }
             return predicate;
         };
