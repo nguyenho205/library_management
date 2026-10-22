@@ -10,19 +10,19 @@ import java.util.List;
 @Data
 public class BookRequest {
 
-    @NotBlank(message = "ISBN khong duoc de trong")
+    @NotBlank(message = "ISBN không được để trống.")
     private String isbn;
 
-    @NotBlank(message = "Ten sach khong duoc de trong")
+    @NotBlank(message = "Tên sách không được để trống.")
     private String title;
 
     private String description;
 
-    @NotNull(message = "So luong khong duoc de trong")
-    @Min(value = 0, message = "So luong phai >= 0")
+    @NotNull(message = "Số lượng không được để trống.")
+    @Min(value = 0, message = "Số lượng phải lớn hơn hoặc bằng 0.")
     private Integer quantityTotal;
 
-    @NotNull(message = "Phai chon the loai sach")
+    @NotNull(message = "Phải chọn thể loại sách.")
     private Long categoryId;
 
     /** Danh sach ten tac gia - he thong se tu tao Author moi neu chua ton tai (quan he N-N) */

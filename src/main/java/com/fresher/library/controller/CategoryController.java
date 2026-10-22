@@ -44,10 +44,10 @@ public class CategoryController {
     @PreAuthorize("hasAuthority('BOOK_CREATE')")
     public ResponseEntity<ApiResponse<CategoryResponse>> create(@Valid @RequestBody CategoryRequest request) {
         if (categoryRepository.findByNameIgnoreCase(request.getName().trim()).isPresent()) {
-            throw new BadRequestException("The loai nay da ton tai");
+            throw new BadRequestException("Thể loại này đã tồn tại");
         }
         Category saved = categoryRepository.save(Category.builder().name(request.getName().trim()).build());
-        return ResponseEntity.ok(ApiResponse.success("Them the loai thanh cong",
+        return ResponseEntity.ok(ApiResponse.success("Thêm thể loại thành công",
                 CategoryResponse.builder().id(saved.getId()).name(saved.getName()).build()));
     }
 }

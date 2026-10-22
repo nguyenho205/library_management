@@ -66,10 +66,10 @@ public class PermissionServiceImpl implements PermissionService {
     public PermissionGroupResponse createGroup(PermissionGroupRequest request) {
         String name = request.getName().trim();
         if (DataSeeder.GROUP_FULL.equals(name)) {
-            throw new BadRequestException("Khong the tao lai nhom quan tri toan quyen he thong");
+            throw new BadRequestException("Không thể tạo lại nhóm quản trị toàn quyền hệ thống");
         }
         if (groupRepository.existsByName(name)) {
-            throw new BadRequestException("Ten nhom quyen da ton tai");
+            throw new BadRequestException("Tên nhóm quyền đã tồn tại");
         }
         Set<Permission> permissions = resolvePermissions(request.getPermissionCodes());
         rejectPermissionManagement(permissions);
@@ -88,14 +88,14 @@ public class PermissionServiceImpl implements PermissionService {
     public PermissionGroupResponse updateGroup(Long id, PermissionGroupRequest request) {
         PermissionGroup group = findGroupOrThrow(id);
         if (DataSeeder.GROUP_FULL.equals(group.getName()) || hasPermissionManagement(group)) {
-            throw new BadRequestException("Nhom quan tri toan quyen he thong khong the chinh sua");
+            throw new BadRequestException("Nhóm quản trị toàn quyền hệ thống không thể chỉnh sửa");
         }
         String name = request.getName().trim();
         if (DataSeeder.GROUP_FULL.equals(name)) {
-            throw new BadRequestException("Ten nay duoc danh rieng cho nhom quan tri toan quyen");
+            throw new BadRequestException("Tên này được dành riêng cho nhóm quản trị toàn quyền");
         }
         if (!group.getName().equals(name) && groupRepository.existsByName(name)) {
-            throw new BadRequestException("Ten nhom quyen da ton tai");
+            throw new BadRequestException("Tên nhóm quyền đã tồn tại");
         }
         group.setName(name);
         group.setDescription(request.getDescription());
@@ -111,10 +111,10 @@ public class PermissionServiceImpl implements PermissionService {
     public void deleteGroup(Long id) {
         PermissionGroup group = findGroupOrThrow(id);
         if (DataSeeder.GROUP_FULL.equals(group.getName()) || hasPermissionManagement(group)) {
-            throw new BadRequestException("Khong the xoa nhom quan tri toan quyen he thong");
+            throw new BadRequestException("Không thể xóa nhóm quản trị toàn quyền hệ thống");
         }
         if (accountRepository.existsByPermissionGroup_Id(id)) {
-            throw new BadRequestException("Nhom quyen dang duoc gan cho tai khoan, hay go khoi tai khoan truoc khi xoa");
+            throw new BadRequestException("Nhóm quyền đang được gán cho tài khoản, hãy gỡ khỏi tài khoản trước khi xóa");
         }
         groupRepository.delete(group);
         log.info("Xoa nhom quyen: id={}", id);
@@ -131,18 +131,18 @@ public class PermissionServiceImpl implements PermissionService {
     @Transactional
     public AccountPermissionResponse assignGroups(Long accountId, AssignGroupsRequest request) {
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay tai khoan voi id=" + accountId));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản với id=" + accountId));
 
         // Chan tu doi quyen cua chinh minh de tranh vo y tu khoa quyen quan tri
         String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         if (account.getEmail().equals(currentEmail)) {
-            throw new BadRequestException("Khong the tu thay doi nhom quyen cua chinh minh");
+            throw new BadRequestException("Không thể tự thay đổi nhóm quyền của chính mình");
         }
 
         PermissionGroup group = findGroupOrThrow(request.getGroupId());
         if (account.getRole() != com.fresher.library.entity.Role.ADMIN
                 && (DataSeeder.GROUP_FULL.equals(group.getName()) || hasPermissionManagement(group))) {
-            throw new BadRequestException("Chi tai khoan quan tri moi duoc gan nhom quan tri toan quyen");
+            throw new BadRequestException("Chỉ tài khoản quản trị mới được gán nhóm quản trị toàn quyền");
         }
         account.setPermissionGroup(group);
         log.info("Gan nhom quyen {} cho account id={}", group.getId(), accountId);
@@ -155,14 +155,14 @@ public class PermissionServiceImpl implements PermissionService {
         Set<String> distinct = new HashSet<>(codes);
         List<Permission> found = permissionRepository.findByCodeIn(distinct);
         if (found.size() != distinct.size()) {
-            throw new BadRequestException("Co ma quyen khong ton tai trong he thong");
+            throw new BadRequestException("Có mã quyền không tồn tại trong hệ thống");
         }
         return new HashSet<>(found);
     }
 
     private void rejectPermissionManagement(Set<Permission> permissions) {
         if (permissions.stream().anyMatch(p -> "PERMISSION_MANAGE".equals(p.getCode()))) {
-            throw new BadRequestException("Quyen quan ly phan quyen chi duoc cap trong nhom quan tri toan quyen he thong");
+            throw new BadRequestException("Quyền quản lý phân quyền chỉ được cấp trong nhóm quản trị toàn quyền hệ thống");
         }
     }
 
@@ -172,7 +172,7 @@ public class PermissionServiceImpl implements PermissionService {
 
     private PermissionGroup findGroupOrThrow(Long id) {
         return groupRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay nhom quyen voi id=" + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy nhóm quyền với id=" + id));
     }
 
     private PermissionGroupResponse toGroupResponse(PermissionGroup g) {

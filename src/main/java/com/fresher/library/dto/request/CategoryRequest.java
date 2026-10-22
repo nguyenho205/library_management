@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 public class CategoryRequest {
 
-    @NotBlank(message = "Ten the loai khong duoc de trong")
-    @Size(max = 100, message = "Ten the loai toi da 100 ky tu")
+    @NotBlank(message = "Tên thể loại không được để trống.")
+    @Size(max = 100, message = "Tên thể loại tối đa 100 ký tự.")
     private String name;
 }

@@ -115,9 +115,11 @@ public class DataSeeder implements CommandLineRunner {
                     .build());
         }
 
+        final Long adminId = admin.getId();
+
         // 4. Sua du lieu tai khoan cu: moi account co mot nhom; USER khong the giu nhom ADMIN.
         accountRepository.findAll().stream()
-                .filter(a -> !a.getId().equals(admin.getId()))
+                .filter(a -> !a.getId().equals(adminId))
                 .forEach(a -> {
                     boolean changed = false;
                     if (a.getRole() == Role.USER && (a.getPermissionGroup() == null

@@ -7,13 +7,13 @@ import lombok.Data;
 @Data
 public class ChangePasswordRequest {
 
-    @NotBlank(message = "Mat khau cu khong duoc de trong")
+    @NotBlank(message = "Mật khẩu cũ không được để trống.")
     private String oldPassword;
 
-    @NotBlank(message = "Mat khau moi khong duoc de trong")
+    @NotBlank(message = "Mật khẩu mới không được để trống.")
     @Pattern(
             regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!]).{8,}$",
-            message = "Mat khau toi thieu 8 ky tu, gom chu hoa, chu thuong, so va ky tu dac biet"
+            message = "Mật khẩu tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt."
     )
     private String newPassword;
 }

@@ -10,13 +10,13 @@ import java.util.List;
 @Data
 public class PermissionGroupRequest {
 
-    @NotBlank(message = "Ten nhom quyen khong duoc de trong")
-    @Size(max = 100, message = "Ten nhom quyen toi da 100 ky tu")
+    @NotBlank(message = "Tên nhóm quyền không được để trống.")
+    @Size(max = 100, message = "Tên nhóm quyền tối đa 100 ký tự.")
     private String name;
 
-    @Size(max = 255, message = "Mo ta toi da 255 ky tu")
+    @Size(max = 255, message = "Mô tả tối đa 255 ký tự.")
     private String description;
 
-    @NotEmpty(message = "Phai chon it nhat 1 quyen")
+    @NotEmpty(message = "Phải chọn ít nhất 1 quyền.")
     private List<String> permissionCodes;
 }

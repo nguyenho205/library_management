@@ -6,6 +6,6 @@ import lombok.Data;
 @Data
 public class SystemConfigRequest {
 
-    @NotNull(message = "maintenanceMode khong duoc de trong")
+    @NotNull(message = "Chế độ bảo trì (maintenanceMode) không được để trống.")
     private Boolean maintenanceMode;
 }

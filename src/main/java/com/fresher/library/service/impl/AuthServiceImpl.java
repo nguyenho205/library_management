@@ -159,7 +159,7 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new UnauthorizedException("Email hoặc mật khẩu không đúng"));
 
         if (!account.isEmailVerified()) {
-            throw new UnauthorizedException("Tài khoản chưa xác thực eamil, vui lòng kiểm tra để xác thực");
+            throw new UnauthorizedException("Tài khoản chưa xác thực email, vui lòng kiểm tra để xác thực");
         }
         if (!account.isEnabled()) {
             throw new UnauthorizedException("Tài khoản đã bị khóa");
@@ -226,7 +226,7 @@ public class AuthServiceImpl implements AuthService {
     public void changePassword(String email, ChangePasswordRequest request) {
         Account account = getAccountOrThrow(email);
         if (!passwordEncoder.matches(request.getOldPassword(), account.getPassword())) {
-            throw new BadRequestException("Mat khau cu khong dung");
+            throw new BadRequestException("Mật khẩu cũ không đúng");
         }
         account.setPassword(passwordEncoder.encode(request.getNewPassword()));
         accountRepository.save(account);
@@ -237,7 +237,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void forgotPassword(ForgotPasswordRequest request) {
         Account account = accountRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay tai khoan voi email nay"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản với email này"));
 
         List<VerificationToken> oldCodes = tokenRepository
                 .findByAccount_EmailAndTypeAndUsedFalse(account.getEmail(), TokenType.PASSWORD_RESET);
@@ -278,7 +278,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void requestChangeEmail(String email, ChangeEmailRequest request) {
         if (accountRepository.existsByEmail(request.getNewEmail())) {
-            throw new BadRequestException("Email moi da duoc su dung boi tai khoan khac");
+            throw new BadRequestException("Email mới đã được sử dụng bởi tài khoản khác");
         }
         Account account = getAccountOrThrow(email);
 
@@ -331,7 +331,7 @@ public class AuthServiceImpl implements AuthService {
 
     private Account getAccountOrThrow(String email) {
         return accountRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay tai khoan"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản"));
     }
 
     private String generateToken() {

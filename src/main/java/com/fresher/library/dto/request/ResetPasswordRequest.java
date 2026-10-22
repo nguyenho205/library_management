@@ -16,10 +16,10 @@ public class ResetPasswordRequest {
     @Pattern(regexp = "^\\d{6}$", message = "Mã xác thực phải gồm đúng 6 chữ số.")
     private String code;
 
-    @NotBlank(message = "Mat khau moi khong duoc de trong")
+    @NotBlank(message = "Mật khẩu mới không được để trống.")
     @Pattern(
             regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!]).{8,}$",
-            message = "Mat khau toi thieu 8 ky tu, gom chu hoa, chu thuong, so va ky tu dac biet"
+            message = "Mật khẩu tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt."
     )
     private String newPassword;
 }

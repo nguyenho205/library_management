@@ -6,6 +6,6 @@ import lombok.Data;
 @Data
 public class BorrowRequest {
 
-    @NotNull(message = "Phai chon sach can muon")
+    @NotNull(message = "Phải chọn sách cần mượn.")
     private Long bookId;
 }
