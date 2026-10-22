@@ -17,6 +17,8 @@ import {
   UsersIcon,
   CheckCircleIcon,
   AlertCircleIcon,
+  LockIcon,
+  UnlockIcon,
 } from '../components/Icons'
 
 const EMPTY_FILTERS = { fullName: '', email: '', bookTitle: '', dobFrom: '', dobTo: '' }
@@ -28,12 +30,13 @@ function formatDate(iso) {
 }
 
 export default function MembersPage() {
-  const { can } = useAuth()
+  const { can, user } = useAuth()
   const canCreate = can('MEMBER_CREATE')
   const canEdit = can('MEMBER_UPDATE')
   const canDelete = can('MEMBER_DELETE')
   const hasActions = canEdit || canDelete
 
+  const [statusTab, setStatusTab] = useState('ACTIVE') // 'ACTIVE' | 'LOCKED'
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [applied, setApplied] = useState(EMPTY_FILTERS)
   const [page, setPage] = useState(0)
@@ -42,14 +45,14 @@ export default function MembersPage() {
   const [notice, setNotice] = useState('')
   const [loading, setLoading] = useState(false)
   const [editing, setEditing] = useState(null) // null | {} (tao moi) | member (sua)
-  const [deletingMember, setDeletingMember] = useState(null)
-  const [deleteBusy, setDeleteBusy] = useState(false)
+  const [lockingMember, setLockingMember] = useState(null)
+  const [lockBusy, setLockBusy] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
-      const params = { page, size: 10 }
+      const params = { page, size: 10, enabled: statusTab === 'ACTIVE' }
       Object.entries(applied).forEach(([k, v]) => v && (params[k] = v))
       setData(await membersApi.search(params))
     } catch (err) {
@@ -57,7 +60,7 @@ export default function MembersPage() {
     } finally {
       setLoading(false)
     }
-  }, [applied, page])
+  }, [applied, page, statusTab])
 
   useEffect(() => {
     load()
@@ -81,18 +84,24 @@ export default function MembersPage() {
     setPage(0)
   }
 
-  const confirmRemove = async () => {
-    if (!deletingMember) return
-    setDeleteBusy(true)
+  const handleToggleLock = async () => {
+    if (!lockingMember) return
+    setLockBusy(true)
+    setError('')
     try {
-      await membersApi.remove(deletingMember.id)
-      setNotice(`Đã xoá thành viên "${deletingMember.fullName}".`)
-      setDeletingMember(null)
+      if (lockingMember.enabled) {
+        await membersApi.lock(lockingMember.id)
+        setNotice(`Đã khoá tài khoản của "${lockingMember.fullName}". Phiên đăng nhập của người dùng này đã bị huỷ.`)
+      } else {
+        await membersApi.unlock(lockingMember.id)
+        setNotice(`Đã mở khoá tài khoản cho "${lockingMember.fullName}".`)
+      }
+      setLockingMember(null)
       load()
     } catch (err) {
       setError(readError(err))
     } finally {
-      setDeleteBusy(false)
+      setLockBusy(false)
     }
   }
 
@@ -123,6 +132,44 @@ export default function MembersPage() {
 
       {notice && <Alert type="success" onClose={() => setNotice('')}>{notice}</Alert>}
       {error && <Alert type="error" onClose={() => setError('')}>{error}</Alert>}
+
+      {/* Segmented Status Tabs: Dang hoat dong vs Dang bi khoa */}
+      <div className="segmented-tabs" role="tablist" aria-label="Bộ lọc trạng thái tài khoản">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={statusTab === 'ACTIVE'}
+          className={`segmented-tab ${statusTab === 'ACTIVE' ? 'active' : ''}`}
+          onClick={() => {
+            if (statusTab !== 'ACTIVE') {
+              setStatusTab('ACTIVE')
+              setPage(0)
+            }
+          }}
+        >
+          <span>Đang hoạt động</span>
+          {statusTab === 'ACTIVE' && data?.totalElements != null && (
+            <span className="segmented-tab-count">{data.totalElements}</span>
+          )}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={statusTab === 'LOCKED'}
+          className={`segmented-tab ${statusTab === 'LOCKED' ? 'active' : ''}`}
+          onClick={() => {
+            if (statusTab !== 'LOCKED') {
+              setStatusTab('LOCKED')
+              setPage(0)
+            }
+          }}
+        >
+          <span>Đang bị khoá</span>
+          {statusTab === 'LOCKED' && data?.totalElements != null && (
+            <span className="segmented-tab-count">{data.totalElements}</span>
+          )}
+        </button>
+      </div>
 
       <form className="toolbar" onSubmit={search}>
         <div className="field">
@@ -188,18 +235,20 @@ export default function MembersPage() {
       ) : data && data.content.length === 0 ? (
         <EmptyState
           icon="users"
-          title="Không tìm thấy thành viên phù hợp"
+          title={statusTab === 'ACTIVE' ? 'Không có thành viên đang hoạt động' : 'Không có thành viên nào bị khoá'}
           description={
             hasActiveFilters
               ? 'Không có thành viên nào khớp với tiêu chí tìm kiếm hiện tại. Thử xoá bớt bộ lọc.'
-              : 'Chưa có dữ liệu thành viên trong hệ thống.'
+              : statusTab === 'ACTIVE'
+              ? 'Chưa có dữ liệu thành viên đang hoạt động trong hệ thống.'
+              : 'Hiện tại không có tài khoản độc giả nào trong trạng thái bị khoá.'
           }
           action={
             hasActiveFilters ? (
               <button className="btn btn-secondary" onClick={resetFilters}>
                 Bỏ các điều kiện lọc
               </button>
-            ) : canCreate ? (
+            ) : statusTab === 'ACTIVE' && canCreate ? (
               <button className="btn btn-primary" onClick={() => setEditing({})}>
                 <PlusIcon width={15} height={15} /> Thêm thành viên đầu tiên
               </button>
@@ -217,8 +266,8 @@ export default function MembersPage() {
                     <th>Email</th>
                     <th style={{ width: 130 }}>Ngày sinh</th>
                     <th style={{ width: 140 }}>Số điện thoại</th>
-                    <th style={{ width: 140 }}>Trạng thái email</th>
-                    {hasActions && <th style={{ width: 120, textAlign: 'right' }}>Thao tác</th>}
+                    <th style={{ width: 160 }}>Trạng thái tài khoản</th>
+                    {hasActions && <th style={{ width: 130, textAlign: 'right' }}>Thao tác</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -232,10 +281,15 @@ export default function MembersPage() {
                       <td className="num">{formatDate(m.dateOfBirth)}</td>
                       <td className="data">{m.phone || 'Chưa cập nhật'}</td>
                       <td>
-                        <span className={`badge ${m.emailVerified ? 'badge-ok' : 'badge-warn'}`}>
-                          <span className="badge-dot" />
-                          {m.emailVerified ? 'Đã xác thực' : 'Chưa xác thực'}
-                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+                          <span className={`badge ${m.enabled ? 'badge-ok' : 'badge-danger'}`}>
+                            <span className="badge-dot" />
+                            {m.enabled ? 'Đang hoạt động' : 'Đang bị khoá'}
+                          </span>
+                          <span className={`badge ${m.emailVerified ? 'badge-neutral' : 'badge-warn'}`} style={{ fontSize: '0.72rem', padding: '1px 6px' }}>
+                            {m.emailVerified ? 'Email đã xác thực' : 'Chưa xác thực email'}
+                          </span>
+                        </div>
                       </td>
                       {hasActions && (
                         <td className="col-actions">
@@ -253,16 +307,30 @@ export default function MembersPage() {
                               </button>
                             )}
                             {canDelete && (
-                              <button
-                                className="btn btn-small btn-danger"
-                                onClick={() => setDeletingMember(m)}
-                                title="Xoá thành viên này"
-                                aria-label={`Xoá thành viên ${m.fullName}`}
-                                type="button"
-                              >
-                                <TrashIcon width={13} height={13} />
-                                <span>Xoá</span>
-                              </button>
+                              m.enabled ? (
+                                <button
+                                  className="btn btn-small btn-warn"
+                                  onClick={() => setLockingMember(m)}
+                                  disabled={m.email === user?.email}
+                                  title={m.email === user?.email ? 'Không thể tự khoá tài khoản của chính mình' : 'Khoá tài khoản độc giả này'}
+                                  aria-label={`Khoá tài khoản ${m.fullName}`}
+                                  type="button"
+                                >
+                                  <LockIcon width={13} height={13} />
+                                  <span>Khoá</span>
+                                </button>
+                              ) : (
+                                <button
+                                  className="btn btn-small btn-ok"
+                                  onClick={() => setLockingMember(m)}
+                                  title="Mở khoá tài khoản độc giả này"
+                                  aria-label={`Mở khoá tài khoản ${m.fullName}`}
+                                  type="button"
+                                >
+                                  <UnlockIcon width={13} height={13} />
+                                  <span>Mở khoá</span>
+                                </button>
+                              )
                             )}
                           </div>
                         </td>
@@ -296,16 +364,20 @@ export default function MembersPage() {
         />
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Lock/Unlock Confirmation Modal */}
       <ConfirmModal
-        isOpen={Boolean(deletingMember)}
-        title="Xác nhận xoá hồ sơ thành viên"
-        message={`Bạn có chắc chắn muốn xoá thành viên "${deletingMember?.fullName}" (${deletingMember?.email}) khỏi cơ sở dữ liệu?`}
-        confirmLabel="Xoá thành viên"
-        isDanger={true}
-        busy={deleteBusy}
-        onConfirm={confirmRemove}
-        onCancel={() => setDeletingMember(null)}
+        isOpen={Boolean(lockingMember)}
+        title={lockingMember?.enabled ? 'Xác nhận khoá tài khoản độc giả' : 'Xác nhận mở khoá tài khoản'}
+        message={
+          lockingMember?.enabled
+            ? `Bạn có chắc chắn muốn khoá tài khoản "${lockingMember?.fullName}" (${lockingMember?.email})? Tài khoản bị khoá sẽ ngay lập tức bị ngắt phiên đăng nhập, không thể truy cập hệ thống và không thể mượn sách mới.`
+            : `Bạn có muốn mở khoá cho tài khoản "${lockingMember?.fullName}" (${lockingMember?.email})? Độc giả sẽ có thể đăng nhập và tiếp tục sử dụng các dịch vụ thư viện.`
+        }
+        confirmLabel={lockingMember?.enabled ? 'Khoá tài khoản' : 'Mở khoá tài khoản'}
+        isDanger={lockingMember?.enabled}
+        busy={lockBusy}
+        onConfirm={handleToggleLock}
+        onCancel={() => setLockingMember(null)}
       />
     </>
   )

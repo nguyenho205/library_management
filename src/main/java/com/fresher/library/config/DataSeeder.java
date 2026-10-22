@@ -2,6 +2,7 @@ package com.fresher.library.config;
 
 import com.fresher.library.entity.*;
 import com.fresher.library.repository.AccountRepository;
+import com.fresher.library.repository.MemberRepository;
 import com.fresher.library.repository.PermissionGroupRepository;
 import com.fresher.library.repository.PermissionRepository;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +50,7 @@ public class DataSeeder implements CommandLineRunner {
     };
 
     private final AccountRepository accountRepository;
+    private final MemberRepository memberRepository;
     private final PermissionRepository permissionRepository;
     private final PermissionGroupRepository groupRepository;
     private final PasswordEncoder passwordEncoder;
@@ -104,7 +106,14 @@ public class DataSeeder implements CommandLineRunner {
                         .build()));
         admin.setRole(Role.ADMIN);
         admin.setPermissionGroup(adminGroup);
-        accountRepository.save(admin);
+        admin = accountRepository.save(admin);
+
+        if (memberRepository.findByAccount_Id(admin.getId()).isEmpty()) {
+            memberRepository.save(Member.builder()
+                    .fullName("Quản trị viên Hệ thống")
+                    .account(admin)
+                    .build());
+        }
 
         // 4. Sua du lieu tai khoan cu: moi account co mot nhom; USER khong the giu nhom ADMIN.
         accountRepository.findAll().stream()

@@ -13,6 +13,14 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState(() => {
+    const msg = sessionStorage.getItem('auth_notice')
+    if (msg) {
+      sessionStorage.removeItem('auth_notice')
+      return msg
+    }
+    return ''
+  })
   const [busy, setBusy] = useState(false)
 
   if (user) return <Navigate to={returnTo} replace />
@@ -20,6 +28,7 @@ export default function LoginPage() {
   const submit = async (e) => {
     e.preventDefault()
     setError('')
+    setNotice('')
     setBusy(true)
     try {
       await login(email, password)
@@ -42,6 +51,7 @@ export default function LoginPage() {
           <p className="sub">Hệ thống quản lý tài liệu và mượn trả sách</p>
         </div>
 
+        {notice && <Alert type="warning">{notice}</Alert>}
         {error && <Alert type="error">{error}</Alert>}
 
         <form onSubmit={submit}>

@@ -17,10 +17,6 @@ export default function SettingsPage({ adminMode = false }) {
       <div className="page-head">
         <div>
           <h1>{showConfig ? 'Cài đặt quản trị' : 'Tài khoản của tôi'}</h1>
-          <p>
-            Quản trị thông tin bảo mật, tài khoản người dùng
-            {showConfig ? ' và cấu hình chế độ bảo trì toàn hệ thống.' : '.'}
-          </p>
         </div>
       </div>
 
@@ -98,7 +94,6 @@ function MaintenanceSection() {
     <SectionCard
       icon={<ShieldIcon width={17} height={17} />}
       title="Chế độ bảo trì hệ thống"
-      hint="Khi kích hoạt, toàn bộ yêu cầu từ thành viên thông thường sẽ bị tạm khóa. Chỉ quản trị viên mới có thể truy cập."
     >
       {error && <Alert type="error">{error}</Alert>}
 
@@ -177,7 +172,6 @@ function PasswordSection() {
     <SectionCard
       icon={<KeyIcon width={17} height={17} />}
       title="Thay đổi mật khẩu đăng nhập"
-      hint="Nên sử dụng mật khẩu mạnh bao gồm chữ hoa, chữ thường, chữ số và ký tự đặc biệt."
     >
       <form onSubmit={submit}>
         {msg && <Alert type={msg.type}>{msg.text}</Alert>}
@@ -204,7 +198,6 @@ function PasswordSection() {
             required
             autoComplete="new-password"
           />
-          <div className="field-hint">Tối thiểu 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.</div>
         </div>
 
         <div className="field">
@@ -284,7 +277,6 @@ function EmailSection() {
     <SectionCard
       icon={<MailIcon width={17} height={17} />}
       title="Đổi địa chỉ email tài khoản"
-      hint="Hệ thống sẽ gửi mã xác thực 6 chữ số tới hộp thư mới để hoàn tất việc đổi email."
     >
       <form onSubmit={submit}>
         {msg && <Alert type={msg.type}>{msg.text}</Alert>}

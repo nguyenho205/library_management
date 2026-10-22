@@ -11,4 +11,5 @@ public interface VerificationTokenRepository extends JpaRepository<VerificationT
     Optional<VerificationToken> findByToken(String token);
     List<VerificationToken> findByAccount_EmailAndTypeAndUsedFalse(String email, TokenType type);
     List<VerificationToken> findByNewEmailAndTypeAndUsedFalse(String newEmail, TokenType type);
+    void deleteByAccount_Id(Long accountId);
 }

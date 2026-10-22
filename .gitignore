@@ -12,6 +12,7 @@ src/main/resources/application-local.yml
 application-local.yml
 run.ps1
 run.bat
+git_commit_branches.ps1
 
 # Frontend artifacts
 node_modules/

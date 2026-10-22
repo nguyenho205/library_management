@@ -68,6 +68,10 @@ public class JwtTokenProvider {
         return (String) parseClaims(token).get("tokenKind");
     }
 
+    public String getRoleFromToken(String token) {
+        return (String) parseClaims(token).get("role");
+    }
+
     public Date getExpiration(String token) {
         return parseClaims(token).getExpiration();
     }

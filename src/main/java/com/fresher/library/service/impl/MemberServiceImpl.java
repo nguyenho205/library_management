@@ -11,9 +11,12 @@ import com.fresher.library.entity.PermissionGroup;
 import com.fresher.library.entity.Role;
 import com.fresher.library.exception.BadRequestException;
 import com.fresher.library.exception.ResourceNotFoundException;
+import com.fresher.library.entity.BorrowStatus;
 import com.fresher.library.repository.AccountRepository;
+import com.fresher.library.repository.BorrowRecordRepository;
 import com.fresher.library.repository.MemberRepository;
 import com.fresher.library.repository.PermissionGroupRepository;
+import com.fresher.library.repository.VerificationTokenRepository;
 import com.fresher.library.repository.specification.MemberSpecification;
 import com.fresher.library.service.MemberService;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +24,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,12 +45,14 @@ public class MemberServiceImpl implements MemberService {
 
     private final MemberRepository memberRepository;
     private final AccountRepository accountRepository;
+    private final BorrowRecordRepository borrowRecordRepository;
+    private final VerificationTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final PermissionGroupRepository permissionGroupRepository;
 
     @Override
     public PageResponse<MemberResponse> search(String fullName, String email, String bookTitle, Long bookId,
-                                                LocalDate dobFrom, LocalDate dobTo, int page, int size) {
+                                                LocalDate dobFrom, LocalDate dobTo, Boolean enabled, int page, int size) {
         // Validate khoang ngay: tu phai <= den (yeu cau de bai: "Check validation khi nhap ngay khong dung")
         if (dobFrom != null && dobTo != null && dobFrom.isAfter(dobTo)) {
             throw new BadRequestException("Ngay bat dau (dobFrom) phai truoc hoac bang ngay ket thuc (dobTo)");
@@ -56,7 +62,7 @@ public class MemberServiceImpl implements MemberService {
         PageRequest pageRequest = PageRequest.of(Math.max(page, 0), safeSize, Sort.by("id").descending());
 
         Page<Member> result = memberRepository.findAll(
-                MemberSpecification.withFilters(fullName, email, bookTitle, bookId, dobFrom, dobTo), pageRequest);
+                MemberSpecification.withFilters(fullName, email, bookTitle, bookId, dobFrom, dobTo, enabled), pageRequest);
 
         return PageResponse.from(result.map(this::toResponse));
     }
@@ -116,8 +122,69 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     public void delete(Long id) {
         Member member = findMemberOrThrow(id);
+
+        if (borrowRecordRepository.existsByMember_IdAndStatus(member.getId(), BorrowStatus.BORROWED)) {
+            throw new BadRequestException("Thành viên đang mượn sách chưa trả. Vui lòng thu hồi sách trước khi xoá tài khoản.");
+        }
+
+        Account account = member.getAccount();
+        if (account != null) {
+            String currentEmail = SecurityContextHolder.getContext().getAuthentication() != null
+                    ? SecurityContextHolder.getContext().getAuthentication().getName()
+                    : null;
+            if (account.getEmail().equalsIgnoreCase(currentEmail)) {
+                throw new BadRequestException("Bạn không thể tự xoá tài khoản của chính mình.");
+            }
+            if (account.getRole() == Role.ADMIN) {
+                throw new BadRequestException("Không thể xoá tài khoản Quản trị viên.");
+            }
+
+            tokenRepository.deleteByAccount_Id(account.getId());
+        }
+
         memberRepository.delete(member);
-        log.info("Xoa member: id={}", id);
+
+        if (account != null) {
+            accountRepository.delete(account);
+        }
+        log.info("Xoa member va account thanh cong: member_id={}, email={}", id, account != null ? account.getEmail() : "null");
+    }
+
+    @Override
+    @Transactional
+    public MemberResponse lock(Long id) {
+        Member member = findMemberOrThrow(id);
+        Account account = member.getAccount();
+        if (account == null) {
+            throw new BadRequestException("Hồ sơ thành viên không liên kết với tài khoản nào");
+        }
+        String currentEmail = SecurityContextHolder.getContext().getAuthentication() != null
+                ? SecurityContextHolder.getContext().getAuthentication().getName()
+                : null;
+        if (account.getEmail().equalsIgnoreCase(currentEmail)) {
+            throw new BadRequestException("Bạn không thể tự khoá tài khoản của chính mình");
+        }
+        if (account.getRole() == Role.ADMIN) {
+            throw new BadRequestException("Không thể khoá tài khoản Quản trị viên");
+        }
+        account.setEnabled(false);
+        accountRepository.save(account);
+        log.info("Khoa tai khoan thanh vien: id={}, email={}", id, account.getEmail());
+        return toResponse(member);
+    }
+
+    @Override
+    @Transactional
+    public MemberResponse unlock(Long id) {
+        Member member = findMemberOrThrow(id);
+        Account account = member.getAccount();
+        if (account == null) {
+            throw new BadRequestException("Hồ sơ thành viên không liên kết với tài khoản nào");
+        }
+        account.setEnabled(true);
+        accountRepository.save(account);
+        log.info("Mo khoa tai khoan thanh vien: id={}, email={}", id, account.getEmail());
+        return toResponse(member);
     }
 
     private Member findMemberOrThrow(Long id) {
@@ -134,6 +201,7 @@ public class MemberServiceImpl implements MemberService {
                 .phone(member.getPhone())
                 .address(member.getAddress())
                 .emailVerified(member.getAccount() != null && member.getAccount().isEmailVerified())
+                .enabled(member.getAccount() == null || member.getAccount().isEnabled())
                 .build();
     }
 
