@@ -52,6 +52,12 @@ public class Book {
     @Builder.Default
     private Long version = 0L;
 
+    /** Trang thai phat hanh: IN_CIRCULATION (dang phat hanh/luu hanh), DISCONTINUED (ngung luu hanh) */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    @Builder.Default
+    private BookStatus status = BookStatus.IN_CIRCULATION;
+
     // Quan he N-1: nhieu Book thuoc 1 Category
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
@@ -80,6 +86,9 @@ public class Book {
         }
         if (this.quantityAvailable == null) {
             this.quantityAvailable = this.quantityTotal;
+        }
+        if (this.status == null) {
+            this.status = BookStatus.IN_CIRCULATION;
         }
     }
 }

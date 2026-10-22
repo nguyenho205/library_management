@@ -17,6 +17,8 @@ import {
   TrashIcon,
   BookIcon,
   FilterIcon,
+  ArchiveIcon,
+  RefreshIcon,
 } from '../components/Icons'
 
 const EMPTY_FORM = { isbn: '', title: '', description: '', quantityTotal: 1, categoryId: '', authorNames: '' }
@@ -30,6 +32,7 @@ export default function BooksPage({ adminMode = false }) {
   const canDelete = adminMode && can('BOOK_DELETE')
   const hasActions = canEdit || canDelete
 
+  const [statusTab, setStatusTab] = useState('IN_CIRCULATION') // 'IN_CIRCULATION' | 'DISCONTINUED'
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [applied, setApplied] = useState(EMPTY_FILTERS)
   const [page, setPage] = useState(0)
@@ -41,6 +44,8 @@ export default function BooksPage({ adminMode = false }) {
 
   const [editing, setEditing] = useState(null) // null | {id?, ...form}
   const [importing, setImporting] = useState(false)
+  const [statusChangingBook, setStatusChangingBook] = useState(null)
+  const [statusBusy, setStatusBusy] = useState(false)
   const [deletingBook, setDeletingBook] = useState(null)
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [viewingBook, setViewingBook] = useState(null)
@@ -49,7 +54,8 @@ export default function BooksPage({ adminMode = false }) {
     setLoading(true)
     setError('')
     try {
-      const params = { page, size: 10 }
+      const effectiveStatus = (adminMode && (isAdmin || isLibrarian)) ? statusTab : 'IN_CIRCULATION'
+      const params = { page, size: 10, status: effectiveStatus }
       Object.entries(applied).forEach(([k, v]) => v && (params[k] = v))
       setData(await booksApi.search(params))
     } catch (err) {
@@ -57,7 +63,7 @@ export default function BooksPage({ adminMode = false }) {
     } finally {
       setLoading(false)
     }
-  }, [applied, page])
+  }, [applied, page, statusTab, adminMode, isAdmin, isLibrarian])
 
   useEffect(() => {
     load()
@@ -93,6 +99,27 @@ export default function BooksPage({ adminMode = false }) {
       setError(readError(err))
     } finally {
       setDeleteBusy(false)
+    }
+  }
+
+  const handleToggleStatus = async () => {
+    if (!statusChangingBook) return
+    setStatusBusy(true)
+    setError('')
+    try {
+      if (statusChangingBook.status === 'DISCONTINUED') {
+        await booksApi.restore(statusChangingBook.id)
+        setNotice(`Đã khôi phục phát hành cho sách "${statusChangingBook.title}".`)
+      } else {
+        await booksApi.discontinue(statusChangingBook.id)
+        setNotice(`Đã chuyển sách "${statusChangingBook.title}" sang trạng thái ngừng lưu hành.`)
+      }
+      setStatusChangingBook(null)
+      load()
+    } catch (err) {
+      setError(readError(err))
+    } finally {
+      setStatusBusy(false)
     }
   }
 
@@ -142,6 +169,46 @@ export default function BooksPage({ adminMode = false }) {
 
       {notice && <Alert type="success" onClose={() => setNotice('')}>{notice}</Alert>}
       {error && <Alert type="error" onClose={() => setError('')}>{error}</Alert>}
+
+      {/* Segmented Status Tabs: Phat hanh vs Ngung luu hanh */}
+      {adminMode && (isAdmin || isLibrarian) && (
+        <div className="segmented-tabs" role="tablist" aria-label="Bộ lọc trạng thái phát hành sách">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={statusTab === 'IN_CIRCULATION'}
+            className={`segmented-tab ${statusTab === 'IN_CIRCULATION' ? 'active' : ''}`}
+            onClick={() => {
+              if (statusTab !== 'IN_CIRCULATION') {
+                setStatusTab('IN_CIRCULATION')
+                setPage(0)
+              }
+            }}
+          >
+            <span>Đang phát hành</span>
+            {statusTab === 'IN_CIRCULATION' && data?.totalElements != null && (
+              <span className="segmented-tab-count">{data.totalElements}</span>
+            )}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={statusTab === 'DISCONTINUED'}
+            className={`segmented-tab ${statusTab === 'DISCONTINUED' ? 'active' : ''}`}
+            onClick={() => {
+              if (statusTab !== 'DISCONTINUED') {
+                setStatusTab('DISCONTINUED')
+                setPage(0)
+              }
+            }}
+          >
+            <span>Ngừng lưu hành</span>
+            {statusTab === 'DISCONTINUED' && data?.totalElements != null && (
+              <span className="segmented-tab-count">{data.totalElements}</span>
+            )}
+          </button>
+        </div>
+      )}
 
       <form className="toolbar" onSubmit={search}>
         <div className="field">
@@ -232,8 +299,8 @@ export default function BooksPage({ adminMode = false }) {
                     <th style={{ width: 140 }}>ISBN</th>
                     <th>Tác phẩm & Tác giả</th>
                     <th style={{ width: 160 }}>Thể loại</th>
-                    <th style={{ width: 140 }}>Tình trạng kho</th>
-                    {hasActions && <th style={{ width: 120, textAlign: 'right' }}>Thao tác</th>}
+                    <th style={{ width: 180 }}>Trạng thái & Tồn kho</th>
+                    {hasActions && <th style={{ width: 180, textAlign: 'right' }}>Thao tác</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -261,12 +328,24 @@ export default function BooksPage({ adminMode = false }) {
                         )}
                       </td>
                       <td>
-                        <span className={`badge ${b.quantityAvailable > 0 ? 'badge-ok' : 'badge-danger'}`}>
-                          <span className="badge-dot" />
-                          {b.quantityAvailable > 0
-                            ? `Còn ${b.quantityAvailable} / ${b.quantityTotal} cuốn`
-                            : 'Hết sách trong kho'}
-                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, alignItems: 'flex-start' }}>
+                          {b.status === 'DISCONTINUED' ? (
+                            <span className="badge badge-neutral">
+                              <span className="badge-dot" style={{ backgroundColor: 'var(--color-text-tertiary)' }} />
+                              Ngừng lưu hành
+                            </span>
+                          ) : (
+                            <span className={`badge ${b.quantityAvailable > 0 ? 'badge-ok' : 'badge-danger'}`}>
+                              <span className="badge-dot" />
+                              {b.quantityAvailable > 0 ? 'Đang phát hành' : 'Hết hàng'}
+                            </span>
+                          )}
+                          <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
+                            {b.quantityAvailable > 0
+                              ? `Còn ${b.quantityAvailable} / ${b.quantityTotal} cuốn`
+                              : '0 cuốn khả dụng'}
+                          </span>
+                        </div>
                       </td>
                       {hasActions && (
                         <td className="col-actions">
@@ -281,6 +360,32 @@ export default function BooksPage({ adminMode = false }) {
                               >
                                 <EditIcon width={13} height={13} />
                                 <span>Sửa</span>
+                              </button>
+                            )}
+                            {canEdit && b.status === 'DISCONTINUED' && (
+                              <button
+                                className="btn btn-small"
+                                onClick={() => setStatusChangingBook(b)}
+                                title="Khôi phục lưu hành"
+                                aria-label={`Tái phát hành sách ${b.title}`}
+                                type="button"
+                                style={{ color: 'var(--color-success)', borderColor: 'var(--color-success-border)' }}
+                              >
+                                <RefreshIcon width={13} height={13} />
+                                <span>Phát hành lại</span>
+                              </button>
+                            )}
+                            {canEdit && b.status !== 'DISCONTINUED' && (
+                              <button
+                                className="btn btn-small"
+                                onClick={() => setStatusChangingBook(b)}
+                                title="Ngừng lưu hành sách"
+                                aria-label={`Ngừng lưu hành sách ${b.title}`}
+                                type="button"
+                                style={{ color: 'var(--color-warn)', borderColor: 'var(--color-warn-border)' }}
+                              >
+                                <ArchiveIcon width={13} height={13} />
+                                <span>Ngừng lưu hành</span>
                               </button>
                             )}
                             {canDelete && (
@@ -384,6 +489,22 @@ export default function BooksPage({ adminMode = false }) {
           }}
         />
       )}
+
+      {/* Status Change Confirmation Modal */}
+      <ConfirmModal
+        isOpen={Boolean(statusChangingBook)}
+        title={statusChangingBook?.status === 'DISCONTINUED' ? 'Xác nhận tái phát hành sách' : 'Xác nhận ngừng lưu hành sách'}
+        message={
+          statusChangingBook?.status === 'DISCONTINUED'
+            ? `Bạn có chắc chắn muốn khôi phục phát hành cuốn sách "${statusChangingBook?.title}"? Độc giả sẽ có thể tìm kiếm và mượn sách bình thường nếu kho còn sách.`
+            : `Bạn có chắc chắn muốn ngừng lưu hành cuốn sách "${statusChangingBook?.title}"? Độc giả sẽ không thể mượn sách này nữa. Các lượt mượn hiện tại vẫn có thể hoàn trả bình thường.`
+        }
+        confirmLabel={statusChangingBook?.status === 'DISCONTINUED' ? 'Tái phát hành' : 'Ngừng lưu hành'}
+        isDanger={statusChangingBook?.status !== 'DISCONTINUED'}
+        busy={statusBusy}
+        onConfirm={handleToggleStatus}
+        onCancel={() => setStatusChangingBook(null)}
+      />
 
       {/* Delete Confirmation Modal */}
       <ConfirmModal

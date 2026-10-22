@@ -10,6 +10,7 @@ import com.fresher.library.exception.BadRequestException;
 import com.fresher.library.exception.ResourceNotFoundException;
 import com.fresher.library.repository.AuthorRepository;
 import com.fresher.library.repository.BookRepository;
+import com.fresher.library.repository.BorrowRecordRepository;
 import com.fresher.library.repository.CategoryRepository;
 import com.fresher.library.repository.specification.BookSpecification;
 import com.fresher.library.service.BookService;
@@ -34,6 +35,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.fresher.library.entity.BookStatus;
+
 @Service
 @RequiredArgsConstructor
 @Log4j2
@@ -45,14 +48,15 @@ public class BookServiceImpl implements BookService {
     private final BookRepository bookRepository;
     private final CategoryRepository categoryRepository;
     private final AuthorRepository authorRepository;
+    private final BorrowRecordRepository borrowRecordRepository;
 
     @Override
-    public PageResponse<BookResponse> search(String title, String isbn, String author, Long categoryId, int page, int size) {
+    public PageResponse<BookResponse> search(String title, String isbn, String author, Long categoryId, BookStatus status, int page, int size) {
         int safeSize = Math.min(size <= 0 ? MAX_PAGE_SIZE : size, MAX_PAGE_SIZE);
         PageRequest pageRequest = PageRequest.of(Math.max(page, 0), safeSize, Sort.by("id").descending());
 
         Page<Book> result = bookRepository.findAll(
-                BookSpecification.withFilters(title, isbn, author, categoryId), pageRequest);
+                BookSpecification.withFilters(title, isbn, author, categoryId, status), pageRequest);
 
         return PageResponse.from(result.map(this::toResponse));
     }
@@ -121,10 +125,33 @@ public class BookServiceImpl implements BookService {
     public void delete(Long id) {
         Book book = findBookOrThrow(id);
         if (book.getQuantityAvailable() < book.getQuantityTotal()) {
-            throw new BadRequestException("Khong the xoa sach dang co nguoi muon");
+            throw new BadRequestException("Không thể xoá sách đang có người mượn");
+        }
+        if (borrowRecordRepository.existsByBook_Id(id)) {
+            throw new BadRequestException("Sách này đã có trong lịch sử mượn trả của thư viện, không thể xoá để bảo toàn dữ liệu thống kê. Bạn có thể cập nhật số lượng kho về 0 nếu ngừng lưu hành.");
         }
         bookRepository.delete(book);
         log.info("Xoa sach: id={}", id);
+    }
+
+    @Override
+    @Transactional
+    public BookResponse discontinue(Long id) {
+        Book book = findBookOrThrow(id);
+        book.setStatus(BookStatus.DISCONTINUED);
+        book = bookRepository.save(book);
+        log.info("Ngung luu hanh sach: id={}, title={}", id, book.getTitle());
+        return toResponse(book);
+    }
+
+    @Override
+    @Transactional
+    public BookResponse restore(Long id) {
+        Book book = findBookOrThrow(id);
+        book.setStatus(BookStatus.IN_CIRCULATION);
+        book = bookRepository.save(book);
+        log.info("Tai phat hanh sach: id={}, title={}", id, book.getTitle());
+        return toResponse(book);
     }
 
     @Override
@@ -214,6 +241,7 @@ public class BookServiceImpl implements BookService {
                 .authorNames(book.getAuthors() == null ? new ArrayList<>() :
                         book.getAuthors().stream().map(Author::getName).collect(Collectors.toList()))
                 .createdAt(book.getCreatedAt())
+                .status(book.getStatus() != null ? book.getStatus().name() : BookStatus.IN_CIRCULATION.name())
                 .build();
     }
 }
