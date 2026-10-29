@@ -43,6 +43,15 @@ client.interceptors.response.use(
 
     if (status === 401 && !originalRequest._retry && !originalRequest.url.includes('/auth/')) {
       originalRequest._retry = true
+
+      const errorMsg = error.response?.data?.message || ''
+      if (errorMsg.includes('đăng nhập ở một nơi khác')) {
+        clearTokens()
+        sessionStorage.setItem('auth_notice', errorMsg)
+        window.location.href = '/login'
+        return Promise.reject(error)
+      }
+
       const { refreshToken } = getTokens()
       if (!refreshToken) {
         clearTokens()
@@ -63,7 +72,11 @@ client.interceptors.response.use(
         return client(originalRequest)
       } catch (refreshError) {
         clearTokens()
-        sessionStorage.setItem('auth_notice', 'Phiên làm việc đã kết thúc hoặc tài khoản của bạn đã bị xoá/vô hiệu hoá.')
+        const kickMsg =
+          refreshError?.response?.data?.message ||
+          errorMsg ||
+          'Phiên làm việc đã kết thúc hoặc tài khoản của bạn đã đăng nhập ở thiết bị khác.'
+        sessionStorage.setItem('auth_notice', kickMsg)
         window.location.href = '/login'
         return Promise.reject(refreshError)
       }

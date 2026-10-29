@@ -18,6 +18,7 @@ public class UserPrincipal implements UserDetails {
     private final String password;
     private final String role;
     private final boolean enabled;
+    private final String sessionId;
     private final Set<GrantedAuthority> authorities = new HashSet<>();
 
     public UserPrincipal(Account account) {
@@ -26,6 +27,7 @@ public class UserPrincipal implements UserDetails {
         this.password = account.getPassword();
         this.role = account.getRole().name();
         this.enabled = account.isEnabled();
+        this.sessionId = account.getSessionId();
 
         // Authority = role + toan bo ma quyen (BOOK_CREATE...) cua cac nhom quyen duoc gan
         authorities.add(new SimpleGrantedAuthority("ROLE_" + role));

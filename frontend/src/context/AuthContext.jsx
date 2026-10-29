@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, useCallback } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { authApi } from '../api/auth'
-import { setTokens, clearTokens } from '../api/client'
+import client, { setTokens, clearTokens } from '../api/client'
 
 const AuthContext = createContext(null)
 
@@ -14,6 +14,35 @@ function loadUser() {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(loadUser)
+
+  // Kiem tra phien hoat dong (Single Session): neu da dang nhap o thiet bi B, thiet bi A se bi da ra ngay
+  useEffect(() => {
+    if (!user) return
+
+    let cancelled = false
+    const checkActiveSession = async () => {
+      try {
+        await client.get('/auth/me')
+      } catch (err) {
+        if (!cancelled && err?.response?.status === 401) {
+          setUser(null)
+        }
+      }
+    }
+
+    const onFocus = () => {
+      checkActiveSession()
+    }
+
+    window.addEventListener('focus', onFocus)
+    const interval = setInterval(checkActiveSession, 15000)
+
+    return () => {
+      cancelled = true
+      window.removeEventListener('focus', onFocus)
+      clearInterval(interval)
+    }
+  }, [user])
 
   const login = useCallback(async (email, password) => {
     const data = await authApi.login(email, password)

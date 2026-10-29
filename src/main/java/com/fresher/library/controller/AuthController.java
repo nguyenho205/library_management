@@ -59,6 +59,11 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Đăng xuất thành công", null));
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<String>> checkSession(Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.success("Session hợp lệ", authentication.getName()));
+    }
+
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<JwtResponse>> refresh(@Valid @RequestBody RefreshTokenRequest request) {
         JwtResponse jwt = authService.refreshToken(request);
