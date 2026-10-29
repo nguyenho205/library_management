@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
@@ -47,4 +48,18 @@ public class BorrowRecord {
     @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(nullable = false, length = 20)
     private BorrowStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(name = "book_condition", length = 30)
+    private BookCondition bookCondition;
+
+    @Column(name = "damage_fee")
+    private BigDecimal damageFee;
+
+    @Column(name = "return_notes", length = 500)
+    private String returnNotes;
+
+    @Column(name = "returned_by", length = 150)
+    private String returnedBy;
 }

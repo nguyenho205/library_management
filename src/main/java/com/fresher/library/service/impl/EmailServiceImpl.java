@@ -30,6 +30,9 @@ public class EmailServiceImpl implements EmailService {
     @Value("${app.mail.enabled:false}")
     private boolean mailEnabled;
 
+    @Value("${app.frontend-url:http://localhost:5173}")
+    private String frontendUrl;
+
     @Override
     public void sendVerificationEmail(String toEmail, String code) {
         String subject = "[Thư viện] Mã xác thực tài khoản";
@@ -55,6 +58,60 @@ public class EmailServiceImpl implements EmailService {
                 + "<strong style=\"font-size:24px;letter-spacing:4px\">" + code + "</strong><br/>"
                 + "Mã có hiệu lực trong 10 phút. Nếu không phải bạn yêu cầu, vui lòng bỏ qua email này.";
         send(newEmail, subject, content);
+    }
+
+    @Override
+    public void sendDueReminderEmail(String toEmail, String memberName, String bookTitle, java.time.LocalDate dueDate, long daysRemainingOrOverdue, boolean isOverdue) {
+        String greetingName = (memberName != null && !memberName.isBlank()) ? memberName : "Bạn đọc";
+        String formattedDate = dueDate != null ? dueDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "hôm nay";
+
+        String subject;
+        String statusAlertHtml;
+
+        if (isOverdue) {
+            subject = "[Thư viện] CẢNH BÁO QUÁ HẠN: Sách \"" + bookTitle + "\" đã quá hạn " + daysRemainingOrOverdue + " ngày";
+            long estimatedPenalty = daysRemainingOrOverdue * 5000;
+            statusAlertHtml = "<div style=\"padding:14px 18px;background-color:#fff1f2;border-left:4px solid #be123c;border-radius:6px;color:#9f1239;margin:16px 0;\">"
+                    + "<div style=\"font-weight:700;font-size:15px;margin-bottom:4px;\">⚠️ TRẠNG THÁI: ĐÃ QUÁ HẠN " + daysRemainingOrOverdue + " NGÀY</div>"
+                    + "<div>Phí trễ hạn tạm tính: <strong style=\"color:#be123c;\">" + String.format("%,d đ", estimatedPenalty) + "</strong> (5.000 đ/cuốn/ngày).</div>"
+                    + "<div style=\"margin-top:4px;\">Vui lòng hoàn trả ngay để tránh tăng thêm tiền phạt hoặc bị tạm khoá quyền mượn sách.</div>"
+                    + "</div>";
+        } else if (daysRemainingOrOverdue == 0) {
+            subject = "[Thư viện] NHẮC NHỞ HÔM NAY: Đến hạn hoàn trả sách \"" + bookTitle + "\"";
+            statusAlertHtml = "<div style=\"padding:14px 18px;background-color:#fffbeb;border-left:4px solid #b45309;border-radius:6px;color:#92400e;margin:16px 0;\">"
+                    + "<div style=\"font-weight:700;font-size:15px;margin-bottom:4px;\">🔔 TRẠNG THÁI: HÔM NAY LÀ HẠN HOÀN TRẢ SÁCH</div>"
+                    + "<div>Vui lòng hoàn trả sách trong ngày hôm nay (<strong>" + formattedDate + "</strong>) để tránh phát sinh phí trễ hạn (5.000 đ/cuốn/ngày).</div>"
+                    + "</div>";
+        } else {
+            subject = "[Thư viện] NHẮC NHỞ: Sắp đến hạn hoàn trả sách \"" + bookTitle + "\"";
+            statusAlertHtml = "<div style=\"padding:14px 18px;background-color:#f0fdfa;border-left:4px solid #0f766e;border-radius:6px;color:#115e59;margin:16px 0;\">"
+                    + "<div style=\"font-weight:700;font-size:15px;margin-bottom:4px;\">⏳ TRẠNG THÁI: CÒN " + daysRemainingOrOverdue + " NGÀY NỮA ĐẾN HẠN TRẢ</div>"
+                    + "<div>Hạn hoàn trả: <strong>" + formattedDate + "</strong>. Bạn vui lòng sắp xếp thời gian để hoàn trả sách đúng hạn.</div>"
+                    + "</div>";
+        }
+
+        String htmlContent = "<div style=\"font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;background-color:#ffffff;\">"
+                + "<div style=\"border-bottom:2px solid #1e3a5f;padding-bottom:12px;margin-bottom:18px;\">"
+                + "<h2 style=\"color:#1e3a5f;margin:0;font-size:20px;\">THƯ VIỆN ĐIỆN TỬ · THÔNG BÁO MƯỢN TRẢ</h2>"
+                + "</div>"
+                + "<p style=\"font-size:15px;line-height:1.5;\">Xin chào <strong>" + greetingName + "</strong>,</p>"
+                + "<p style=\"font-size:14px;color:#475569;line-height:1.5;\">Hệ thống Thư viện gửi email thông báo nhắc nhở về tình trạng mượn tài liệu của bạn:</p>"
+                + "<div style=\"background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:14px 18px;margin:16px 0;\">"
+                + "<p style=\"margin:4px 0;font-size:14px;\">📚 <strong>Tác phẩm:</strong> " + bookTitle + "</p>"
+                + "<p style=\"margin:4px 0;font-size:14px;\">📅 <strong>Hạn hoàn trả:</strong> <span style=\"font-weight:700;color:#1e3a5f;\">" + formattedDate + "</span></p>"
+                + "</div>"
+                + statusAlertHtml
+                + "<p style=\"font-size:14px;line-height:1.6;color:#475569;margin-top:16px;\">"
+                + "Bạn có thể hoàn trả tài liệu trực tiếp tại quầy phục vụ của Thư viện hoặc truy cập vào trang web để thao tác trả sách."
+                + "</p>"
+                + "<div style=\"margin:24px 0;text-align:center;\">"
+                + "<a href=\"" + frontendUrl + "/my-loans\" style=\"background-color:#1e3a5f;color:#ffffff;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:600;display:inline-block;\">Mở trang Mượn và trả sách</a>"
+                + "</div>"
+                + "<hr style=\"border:none;border-top:1px solid #e2e8f0;margin:24px 0;\"/>"
+                + "<p style=\"font-size:12px;color:#94a3b8;margin:0;text-align:center;\">Email này được gửi tự động từ Hệ thống Quản lý Thư viện. Vui lòng không trả lời trực tiếp email này.</p>"
+                + "</div>";
+
+        send(toEmail, subject, htmlContent);
     }
 
     private void send(String to, String subject, String htmlContent) {

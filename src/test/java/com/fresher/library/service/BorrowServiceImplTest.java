@@ -39,6 +39,8 @@ class BorrowServiceImplTest {
     private BookRepository bookRepository;
     @Mock
     private MemberRepository memberRepository;
+    @Mock
+    private com.fresher.library.repository.AccountRepository accountRepository;
 
     @InjectMocks
     private BorrowServiceImpl borrowService;
@@ -54,9 +56,98 @@ class BorrowServiceImplTest {
     }
 
     @Test
+    void requestBorrow_thanhCong_trangThaiPending_khongTruTonKho() {
+        java.time.LocalDate requestedDate = java.time.LocalDate.now().plusDays(10);
+        when(memberRepository.findByAccount_EmailWithLock("user@test.com")).thenReturn(Optional.of(member));
+        when(borrowRecordRepository.existsByMember_IdAndStatusIn(eq(10L), any())).thenReturn(false);
+        when(bookRepository.findById(100L)).thenReturn(Optional.of(book));
+        when(borrowRecordRepository.save(any(BorrowRecord.class))).thenAnswer(inv -> {
+            BorrowRecord r = inv.getArgument(0);
+            r.setId(888L);
+            return r;
+        });
+
+        BorrowRecordResponse response = borrowService.requestBorrow("user@test.com", 100L, requestedDate);
+
+        assertThat(response.getId()).isEqualTo(888L);
+        assertThat(response.getStatus()).isEqualTo("PENDING");
+        assertThat(response.getDueDate()).isEqualTo(requestedDate);
+        assertThat(book.getQuantityAvailable()).isEqualTo(2); // Khong tru kho khi moi chi gui yeu cau
+        verify(bookRepository, never()).save(any());
+    }
+
+    @Test
+    void requestBorrow_ngayTraTrongQuaKhu_phaiNemBadRequestException() {
+        java.time.LocalDate pastDate = java.time.LocalDate.now().minusDays(1);
+        when(memberRepository.findByAccount_EmailWithLock("user@test.com")).thenReturn(Optional.of(member));
+        when(borrowRecordRepository.existsByMember_IdAndStatusIn(eq(10L), any())).thenReturn(false);
+        when(bookRepository.findById(100L)).thenReturn(Optional.of(book));
+
+        assertThatThrownBy(() -> borrowService.requestBorrow("user@test.com", 100L, pastDate))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Ngày trả dự kiến");
+    }
+
+    @Test
+    void approveRequest_thanhCong_chuyenSangBorrowed_truTonKho() {
+        BorrowRecord pendingRecord = BorrowRecord.builder()
+                .id(777L)
+                .member(member)
+                .book(book)
+                .borrowDate(java.time.LocalDate.now())
+                .dueDate(java.time.LocalDate.now().plusDays(14))
+                .status(BorrowStatus.PENDING)
+                .build();
+
+        when(borrowRecordRepository.findById(777L)).thenReturn(Optional.of(pendingRecord));
+        when(bookRepository.save(any(Book.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(borrowRecordRepository.save(any(BorrowRecord.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        BorrowRecordResponse response = borrowService.approveRequest(777L);
+
+        assertThat(response.getStatus()).isEqualTo("BORROWED");
+        assertThat(book.getQuantityAvailable()).isEqualTo(1); // 2 -> 1 sau khi phe duyet
+        verify(bookRepository, times(1)).save(book);
+    }
+
+    @Test
+    void rejectRequest_thanhCong_chuyenSangRejected_khongDoiTonKho() {
+        BorrowRecord pendingRecord = BorrowRecord.builder()
+                .id(777L)
+                .member(member)
+                .book(book)
+                .borrowDate(java.time.LocalDate.now())
+                .dueDate(java.time.LocalDate.now().plusDays(14))
+                .status(BorrowStatus.PENDING)
+                .build();
+
+        when(borrowRecordRepository.findById(777L)).thenReturn(Optional.of(pendingRecord));
+        when(borrowRecordRepository.save(any(BorrowRecord.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        BorrowRecordResponse response = borrowService.rejectRequest(777L);
+
+        assertThat(response.getStatus()).isEqualTo("REJECTED");
+        assertThat(book.getQuantityAvailable()).isEqualTo(2); // Ton kho giu nguyen
+        verify(bookRepository, never()).save(any());
+    }
+
+    @Test
+    void tinhPhatQuaHan_dungKichBanChuan_14Ngay_70k() {
+        // Kich ban de bai: Due date 14/10/2026, Reference 28/10/2026 -> 14 ngay, 70.000 VND
+        java.time.LocalDate dueDate = java.time.LocalDate.of(2026, 10, 14);
+        java.time.LocalDate returnDate = java.time.LocalDate.of(2026, 10, 28);
+
+        long overdueDays = BorrowServiceImpl.calculateOverdueDays(dueDate, returnDate, BorrowStatus.RETURNED);
+        java.math.BigDecimal penalty = BorrowServiceImpl.calculatePenalty(overdueDays, BorrowServiceImpl.DEFAULT_PENALTY_RATE_PER_DAY);
+
+        assertThat(overdueDays).isEqualTo(14);
+        assertThat(penalty).isEqualByComparingTo(new java.math.BigDecimal("70000"));
+    }
+
+    @Test
     void borrowBook_thanhCong_phaiTruTonKho() {
-        when(memberRepository.findByAccount_Email("user@test.com")).thenReturn(Optional.of(member));
-        when(borrowRecordRepository.existsByMember_IdAndStatus(10L, BorrowStatus.BORROWED)).thenReturn(false);
+        when(memberRepository.findByAccount_EmailWithLock("user@test.com")).thenReturn(Optional.of(member));
+        when(borrowRecordRepository.existsByMember_IdAndStatusIn(eq(10L), any())).thenReturn(false);
         when(bookRepository.findById(100L)).thenReturn(Optional.of(book));
         when(bookRepository.save(any(Book.class))).thenAnswer(inv -> inv.getArgument(0));
         when(borrowRecordRepository.save(any(BorrowRecord.class))).thenAnswer(inv -> {
@@ -64,6 +155,14 @@ class BorrowServiceImplTest {
             r.setId(999L);
             return r;
         });
+        when(borrowRecordRepository.findById(999L)).thenAnswer(inv -> Optional.of(BorrowRecord.builder()
+                .id(999L)
+                .member(member)
+                .book(book)
+                .borrowDate(java.time.LocalDate.now())
+                .dueDate(java.time.LocalDate.now().plusDays(14))
+                .status(BorrowStatus.PENDING)
+                .build()));
 
         BorrowRecordResponse response = borrowService.borrowBook("user@test.com", 100L);
 
@@ -76,8 +175,8 @@ class BorrowServiceImplTest {
     @Test
     void borrowBook_hetHang_phaiNemBadRequestException() {
         book.setQuantityAvailable(0);
-        when(memberRepository.findByAccount_Email("user@test.com")).thenReturn(Optional.of(member));
-        when(borrowRecordRepository.existsByMember_IdAndStatus(10L, BorrowStatus.BORROWED)).thenReturn(false);
+        when(memberRepository.findByAccount_EmailWithLock("user@test.com")).thenReturn(Optional.of(member));
+        when(borrowRecordRepository.existsByMember_IdAndStatusIn(eq(10L), any())).thenReturn(false);
         when(bookRepository.findById(100L)).thenReturn(Optional.of(book));
 
         assertThatThrownBy(() -> borrowService.borrowBook("user@test.com", 100L))
@@ -89,20 +188,20 @@ class BorrowServiceImplTest {
 
     @Test
     void borrowBook_dangMuonSachKhac_phaiNemBadRequestException() {
-        when(memberRepository.findByAccount_Email("user@test.com")).thenReturn(Optional.of(member));
-        when(borrowRecordRepository.existsByMember_IdAndStatus(10L, BorrowStatus.BORROWED)).thenReturn(true);
+        when(memberRepository.findByAccount_EmailWithLock("user@test.com")).thenReturn(Optional.of(member));
+        when(borrowRecordRepository.existsByMember_IdAndStatusIn(eq(10L), any())).thenReturn(true);
 
         assertThatThrownBy(() -> borrowService.borrowBook("user@test.com", 100L))
                 .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("dang muon");
+                .hasMessageContaining("đang mượn");
 
         verifyNoInteractions(bookRepository);
     }
 
     @Test
     void borrowBook_sachKhongTonTai_phaiNemResourceNotFoundException() {
-        when(memberRepository.findByAccount_Email("user@test.com")).thenReturn(Optional.of(member));
-        when(borrowRecordRepository.existsByMember_IdAndStatus(10L, BorrowStatus.BORROWED)).thenReturn(false);
+        when(memberRepository.findByAccount_EmailWithLock("user@test.com")).thenReturn(Optional.of(member));
+        when(borrowRecordRepository.existsByMember_IdAndStatusIn(eq(10L), any())).thenReturn(false);
         when(bookRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> borrowService.borrowBook("user@test.com", 999L))
@@ -113,7 +212,6 @@ class BorrowServiceImplTest {
     void returnBook_thanhCong_phaiCongLaiTonKho() {
         BorrowRecord record = BorrowRecord.builder()
                 .id(500L).member(member).book(book).status(BorrowStatus.BORROWED).build();
-        when(memberRepository.findByAccount_Email("user@test.com")).thenReturn(Optional.of(member));
         when(borrowRecordRepository.findById(500L)).thenReturn(Optional.of(record));
         when(borrowRecordRepository.save(any(BorrowRecord.class))).thenAnswer(inv -> inv.getArgument(0));
         when(bookRepository.save(any(Book.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -131,7 +229,6 @@ class BorrowServiceImplTest {
         BorrowRecord record = BorrowRecord.builder()
                 .id(500L).member(otherMember).book(book).status(BorrowStatus.BORROWED).build();
 
-        when(memberRepository.findByAccount_Email("user@test.com")).thenReturn(Optional.of(member));
         when(borrowRecordRepository.findById(500L)).thenReturn(Optional.of(record));
 
         assertThatThrownBy(() -> borrowService.returnBook("user@test.com", 500L))
@@ -142,7 +239,6 @@ class BorrowServiceImplTest {
     void returnBook_daTraTruocDo_phaiNemBadRequestException() {
         BorrowRecord record = BorrowRecord.builder()
                 .id(500L).member(member).book(book).status(BorrowStatus.RETURNED).build();
-        when(memberRepository.findByAccount_Email("user@test.com")).thenReturn(Optional.of(member));
         when(borrowRecordRepository.findById(500L)).thenReturn(Optional.of(record));
 
         assertThatThrownBy(() -> borrowService.returnBook("user@test.com", 500L))
