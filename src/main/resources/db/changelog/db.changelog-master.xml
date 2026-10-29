@@ -21,5 +21,7 @@
     <include file="db/changelog/changes/014-single-permission-group-per-account.xml" relativeToChangelogFile="false"/>
     <include file="db/changelog/changes/015-add-book-status.xml" relativeToChangelogFile="false"/>
     <include file="db/changelog/changes/016-add-book-image-url.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/017-add-session-id-to-account.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/018-add-return-condition-to-borrow-record.xml" relativeToChangelogFile="false"/>
 
 </databaseChangeLog>

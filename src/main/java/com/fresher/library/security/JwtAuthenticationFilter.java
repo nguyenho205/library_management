@@ -24,6 +24,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService userDetailsService;
     private final TokenBlacklistService tokenBlacklistService;
+    private final SessionManagerService sessionManagerService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -42,6 +43,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     log.warn("Tai khoan bi vo hieu hoa hoac da bi xoa: {}", email);
                     SecurityContextHolder.clearContext();
                     filterChain.doFilter(request, response);
+                    return;
+                }
+
+                // Kiem tra Single Active Session: neu tai khoan da dang nhap o thiet bi khac, da phien cu ra
+                String tokenSessionId = jwtTokenProvider.getSessionId(token);
+                String dbSessionId = (userDetails instanceof UserPrincipal up) ? up.getSessionId() : null;
+
+                if (!sessionManagerService.isCurrentSession(email, tokenSessionId, dbSessionId)) {
+                    log.warn("Tai khoan {} bi da ra vi co dang nhap o noi khac.", email);
+                    SecurityContextHolder.clearContext();
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().write("{\"success\":false,\"status\":401,\"message\":\"Tài khoản của bạn đã được đăng nhập ở một nơi khác. Vui lòng đăng nhập lại.\"}");
                     return;
                 }
 

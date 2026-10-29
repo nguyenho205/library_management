@@ -58,6 +58,13 @@ public class Account {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    /**
+     * Session ID phuc vu co che Single Session: moi lan dang nhap se sinh UUID moi.
+     * Neu co dang nhap o noi khac, session_id thay doi -> cac phien cu bi da ra.
+     */
+    @Column(name = "session_id", length = 64)
+    private String sessionId;
+
     // Quan he 1-1: 1 Account <-> 1 Member profile (chi USER moi co Member)
     @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore

@@ -40,24 +40,34 @@ public class JwtTokenProvider {
     }
 
     public String generateAccessToken(String email, String role) {
-        return buildToken(email, role, accessTokenExpirationMs, "ACCESS");
+        return generateAccessToken(email, role, null);
+    }
+
+    public String generateAccessToken(String email, String role, String sessionId) {
+        return buildToken(email, role, accessTokenExpirationMs, "ACCESS", sessionId);
     }
 
     public String generateRefreshToken(String email, String role) {
-        return buildToken(email, role, refreshTokenExpirationMs, "REFRESH");
+        return generateRefreshToken(email, role, null);
     }
 
-    private String buildToken(String email, String role, long expirationMs, String tokenKind) {
+    public String generateRefreshToken(String email, String role, String sessionId) {
+        return buildToken(email, role, refreshTokenExpirationMs, "REFRESH", sessionId);
+    }
+
+    private String buildToken(String email, String role, long expirationMs, String tokenKind, String sessionId) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + expirationMs);
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .setSubject(email)
                 .claim("role", role)
                 .claim("tokenKind", tokenKind)
                 .setIssuedAt(now)
-                .setExpiration(expiry)
-                .signWith(signingKey, SignatureAlgorithm.HS512)
-                .compact();
+                .setExpiration(expiry);
+        if (sessionId != null) {
+            builder.claim("sessionId", sessionId);
+        }
+        return builder.signWith(signingKey, SignatureAlgorithm.HS512).compact();
     }
 
     public String getEmailFromToken(String token) {
@@ -70,6 +80,10 @@ public class JwtTokenProvider {
 
     public String getRoleFromToken(String token) {
         return (String) parseClaims(token).get("role");
+    }
+
+    public String getSessionId(String token) {
+        return (String) parseClaims(token).get("sessionId");
     }
 
     public Date getExpiration(String token) {
