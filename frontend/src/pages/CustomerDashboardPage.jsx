@@ -6,20 +6,56 @@ import { borrowApi } from '../api/borrow'
 import { readError } from '../api/errors'
 import Alert from '../components/Alert'
 import Skeleton from '../components/Skeleton'
+import Modal from '../components/Modal'
 import { BookIcon, CirculationIcon, ClockIcon, ChevronRightIcon, SearchIcon } from '../components/Icons'
 
+function getMinReturnDate() {
+  const d = new Date()
+  d.setDate(d.getDate() + 1)
+  return d.toISOString().split('T')[0]
+}
+
+function getMaxReturnDate() {
+  const d = new Date()
+  d.setDate(d.getDate() + 10)
+  return d.toISOString().split('T')[0]
+}
+
+function getDefaultReturnDate() {
+  const d = new Date()
+  d.setDate(d.getDate() + 10)
+  return d.toISOString().split('T')[0]
+}
+
+function getFutureDate(days) {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  return d.toISOString().split('T')[0]
+}
+
 const CURATED_COVERS = {
-  'tắt đèn': 'https://images.unsplash.com/photo-1476275466078-4007374efbbe?w=500&q=80',
-  'số đỏ': 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=500&q=80',
-  'truyện kiều': 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&q=80',
-  'nhà giả kim': 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=500&q=80',
-  'giải tích': 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=500&q=80',
-  'lược sử thời gian': 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=500&q=80',
-  'vật lý': 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=500&q=80',
-  'java': 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500&q=80',
-  'spring': 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=500&q=80',
-  'cấu trúc dữ liệu': 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=500&q=80',
-  'cơ sở dữ liệu': 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=500&q=80',
+  'tắt đèn': '/anhbia/tatden.jpg',
+  'số đỏ': '/anhbia/sodo.webp',
+  'truyện kiều': '/anhbia/truyenkieu.webp',
+  'nhà giả kim': '/anhbia/nhagiakim.jpg',
+  'đắc nhân tâm': '/anhbia/dacnhantam.jpg',
+  'dế mèn': '/anhbia/demenphieuluuky.jpg',
+  'giải tích': '/anhbia/giaitich1.jpg',
+  'toán': '/anhbia/giaitich1.jpg',
+  'lược sử thời gian': '/anhbia/luocsuthoigian.webp',
+  'lược sử loài người': '/anhbia/luocsuloainguoi.jpg',
+  'sapiens': '/anhbia/luocsuloainguoi.jpg',
+  'vật lý': '/anhbia/vatlydaicuong.png',
+  'clean architecture': '/anhbia/CleanArchitecture.jpg',
+  'clean code': '/anhbia/CleanArchitecture.jpg',
+  'spring boot in action': '/anhbia/springbootinaction.webp',
+  'spring in action': '/anhbia/springbootinaction.webp',
+  'spring': '/anhbia/springboot.jpg',
+  'cấu trúc dữ liệu': '/anhbia/cautrucdulieuvagiaithuat.jpg',
+  'giải thuật': '/anhbia/cautrucdulieuvagiaithuat.jpg',
+  'cơ sở dữ liệu': '/anhbia/cosodulieuquanhe.jpg',
+  'mạng máy tính': '/anhbia/mangmaytinh.jpg',
+  'java': '/anhbia/javacore.jpg',
 }
 
 function getBookCover(book) {
@@ -30,13 +66,13 @@ function getBookCover(book) {
   }
   const cat = (book?.categoryName || '').toLowerCase()
   if (cat.includes('văn học') || cat.includes('tiểu thuyết')) {
-    return 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&q=80'
+    return '/anhbia/truyenkieu.webp'
   }
   if (cat.includes('lập trình') || cat.includes('công nghệ') || cat.includes('tin học')) {
-    return 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=500&q=80'
+    return '/anhbia/javacore.jpg'
   }
   if (cat.includes('khoa học') || cat.includes('toán') || cat.includes('vật lý')) {
-    return 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=500&q=80'
+    return '/anhbia/luocsuthoigian.webp'
   }
   return null
 }
@@ -48,7 +84,7 @@ const formatDate = (value) => {
 }
 
 const overdue = (record) =>
-  record?.status === 'BORROWED' && new Date(record.dueDate) < new Date(new Date().toDateString())
+  Boolean(record?.overdue || (record?.status === 'BORROWED' && new Date(record?.dueDate) < new Date(new Date().toDateString())))
 
 export default function CustomerDashboardPage() {
   const { user, can } = useAuth()
@@ -237,24 +273,47 @@ export default function CustomerDashboardPage() {
     loadDashboard()
   }, [loadDashboard])
 
-  const activeLoan = history.find((record) => record.status === 'BORROWED') || null
+  const activeLoans = history.filter((record) => record.status === 'BORROWED')
+  const pendingLoans = history.filter((record) => record.status === 'PENDING')
+  const activeLoan = activeLoans[0] || null
+  const pendingLoan = pendingLoans[0] || null
+  const totalActiveLoans = activeLoans.length + pendingLoans.length
+  const reachedBorrowLimit = totalActiveLoans >= 2
+  const hasExistingLoanOrPending = reachedBorrowLimit
   const recentLoans = useMemo(() => history.slice(0, 3), [history])
   const currentBooks = tabData[activeTab] || []
   const availableCount = currentBooks.filter((book) => book.quantityAvailable > 0).length
   const firstName = user?.email?.split('@')[0] || 'bạn đọc'
 
-  const borrowBook = async (book) => {
-    setError('')
-    setNotice('')
-    setBusyBook(book.id)
+  const [requestingBook, setRequestingBook] = useState(null)
+  const [requestedDueDate, setRequestedDueDate] = useState(getDefaultReturnDate())
+  const [borrowSubmitting, setBorrowSubmitting] = useState(false)
+  const [borrowModalError, setBorrowModalError] = useState('')
+
+  const openBorrowModal = (book) => {
+    setRequestingBook(book)
+    setRequestedDueDate(getDefaultReturnDate())
+    setBorrowModalError('')
+  }
+
+  const handleBorrowSubmit = async (e) => {
+    e.preventDefault()
+    if (!requestingBook) return
+    setBorrowSubmitting(true)
+    setBorrowModalError('')
     try {
-      await borrowApi.borrow(book.id)
-      setNotice(`Bạn đã mượn “${book.title}”. Hạn trả sau 14 ngày.`)
+      await borrowApi.borrow(requestingBook.id, requestedDueDate)
+      setNotice(
+        `Gửi yêu cầu mượn cuốn “${requestingBook.title}” thành công với ngày hẹn trả ${formatDate(
+          requestedDueDate
+        )}. Yêu cầu đang chờ thủ thư phê duyệt.`
+      )
+      setRequestingBook(null)
       await loadDashboard()
     } catch (err) {
-      setError(readError(err))
+      setBorrowModalError(readError(err))
     } finally {
-      setBusyBook(null)
+      setBorrowSubmitting(false)
     }
   }
 
@@ -262,7 +321,6 @@ export default function CustomerDashboardPage() {
     <div className="customer-home">
       <section className="reader-hero">
         <div className="reader-hero-copy">
-          <span className="reader-eyebrow">THƯ VIỆN TRỰC TUYẾN</span>
           <h1>Chào {firstName}, hôm nay bạn muốn đọc gì?</h1>
           <p>Tìm một cuốn sách mới, theo dõi hạn trả và xem lại hành trình đọc của bạn tại thư viện.</p>
           <div className="reader-hero-actions">
@@ -299,9 +357,15 @@ export default function CustomerDashboardPage() {
         )}
         {can('BORROW_USE') && (
           <article className="reader-stat reader-stat-accent">
-            <span className="reader-stat-label">Đang mượn</span>
-            <strong>{loading ? '…' : activeLoan ? '01' : '00'}</strong>
-            <span>{activeLoan ? 'Nhớ trả sách đúng hạn nhé' : 'Bạn có thể chọn sách để mượn'}</span>
+            <span className="reader-stat-label">Đang mượn & Chờ duyệt</span>
+            <strong>{loading ? '…' : `${String(totalActiveLoans).padStart(2, '0')} / 02`}</strong>
+            <span>
+              {totalActiveLoans >= 2
+                ? 'Đã đạt tối đa 2 cuốn theo quy định'
+                : totalActiveLoans === 1
+                ? 'Còn 1 lượt mượn sách khả dụng'
+                : 'Mượn tối đa 2 cuốn / 1 lần'}
+            </span>
           </article>
         )}
         {can('BOOK_VIEW') && (
@@ -317,27 +381,80 @@ export default function CustomerDashboardPage() {
         <section className="reader-loan-section">
           <div className="reader-section-heading">
             <div>
-              <span className="reader-kicker">GÓC CỦA BẠN</span>
-              <h2>Cuốn sách đang mượn</h2>
+              <h2>
+                {activeLoans.length > 0
+                  ? `Sách đang mượn (${activeLoans.length}/2 cuốn)`
+                  : pendingLoans.length > 0
+                  ? `Yêu cầu mượn chờ duyệt (${pendingLoans.length})`
+                  : 'Sách đang mượn'}
+              </h2>
             </div>
-            <Link to="/my-loans" className="reader-text-link">Lịch sử mượn <ChevronRightIcon width={15} height={15} /></Link>
+            <Link to="/my-loans" className="reader-text-link">Xem tất cả <ChevronRightIcon width={15} height={15} /></Link>
           </div>
-          {loading ? <Skeleton rows={2} /> : activeLoan ? (
-            <article className={`reader-current-loan ${overdue(activeLoan) ? 'is-overdue' : ''}`}>
-              <div className="reader-loan-mark"><CirculationIcon width={23} height={23} /></div>
-              <div className="reader-loan-copy">
-                <span className={`badge ${overdue(activeLoan) ? 'badge-danger' : 'badge-warn'}`}>
-                  {overdue(activeLoan) ? 'Quá hạn trả' : 'Đang đọc'}
-                </span>
-                <h3>{activeLoan.bookTitle}</h3>
-                <p>Mượn ngày {formatDate(activeLoan.borrowDate)}</p>
-              </div>
-              <div className="reader-due-date">
-                <span><ClockIcon width={15} height={15} /> Hạn trả</span>
-                <strong>{formatDate(activeLoan.dueDate)}</strong>
-              </div>
-              <Link to="/my-loans" className="btn btn-secondary btn-sm">Xem phiếu mượn</Link>
-            </article>
+          {loading ? (
+            <Skeleton rows={2} />
+          ) : activeLoans.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {activeLoans.map((loan) => (
+                <article key={loan.id} className={`reader-current-loan ${overdue(loan) ? 'is-overdue' : ''}`}>
+                  <div className="reader-loan-mark"><CirculationIcon width={23} height={23} /></div>
+                  <div className="reader-loan-copy">
+                    <span className={`badge ${overdue(loan) ? 'badge-danger' : 'badge-warn'}`}>
+                      {overdue(loan)
+                        ? `Quá hạn ${loan.overdueDays || 1} ngày`
+                        : 'Đang đọc'}
+                    </span>
+                    <h3>{loan.bookTitle}</h3>
+                    <p>
+                      Mượn ngày {formatDate(loan.borrowDate)}
+                      {overdue(loan) && loan.penaltyAmount && Number(loan.penaltyAmount) > 0 && (
+                        <span style={{ color: 'var(--color-danger-text)', fontWeight: 600, marginLeft: 8 }}>
+                          · Phí phạt: {Number(loan.penaltyAmount).toLocaleString('vi-VN')} đ
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="reader-due-date">
+                    <span><ClockIcon width={15} height={15} /> Hạn trả (10 ngày)</span>
+                    <strong>{formatDate(loan.dueDate)}</strong>
+                  </div>
+                  <Link to="/my-loans" className="btn btn-secondary btn-sm">Xem phiếu mượn</Link>
+                </article>
+              ))}
+            </div>
+          ) : pendingLoans.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {pendingLoans.map((pending) => (
+                <article
+                  key={pending.id}
+                  className="reader-current-loan"
+                  style={{
+                    borderColor: 'var(--color-warn-border)',
+                    backgroundColor: 'var(--color-warn-bg)',
+                  }}
+                >
+                  <div className="reader-loan-mark" style={{ color: 'var(--color-warn)' }}>
+                    <ClockIcon width={23} height={23} />
+                  </div>
+                  <div className="reader-loan-copy">
+                    <span className="badge badge-warn">
+                      <span className="badge-dot" />
+                      Đang chờ duyệt (1 – 3 ngày)
+                    </span>
+                    <h3>{pending.bookTitle}</h3>
+                    <p>
+                      Đã gửi ngày {formatDate(pending.borrowDate)} · Hạn trả mong muốn:{' '}
+                      <strong style={{ color: 'var(--color-brand)' }}>{formatDate(pending.dueDate)}</strong>
+                    </p>
+                  </div>
+                  <div className="reader-due-date">
+                    <span><ClockIcon width={15} height={15} /> Dự kiến trả</span>
+                    <strong>{formatDate(pending.dueDate)}</strong>
+                  </div>
+                  <Link to="/my-loans" className="btn btn-secondary btn-sm">Xem phiếu</Link>
+                </article>
+              ))}
+            </div>
           ) : (
             <article className="reader-no-loan">
               <div className="reader-loan-mark"><BookIcon width={23} height={23} /></div>
@@ -355,7 +472,6 @@ export default function CustomerDashboardPage() {
         <section className="reader-discover-section">
           <div className="reader-section-heading">
             <div>
-              <span className="reader-kicker">GỢI Ý PHÙ HỢP VỚI BẠN</span>
               <h2>Sách gợi ý hôm nay</h2>
             </div>
             <Link to="/catalog" className="reader-text-link">Xem toàn bộ danh mục <ChevronRightIcon width={15} height={15} /></Link>
@@ -400,7 +516,12 @@ export default function CustomerDashboardPage() {
                 const coverUrl = getBookCover(book)
                 return (
                   <article className="ecommerce-book-card" key={book.id}>
-                    <div className="ecommerce-cover-frame">
+                    <div
+                      className="ecommerce-cover-frame"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => openBorrowModal(book)}
+                      title={`Xem chi tiết tác phẩm ${book.title}`}
+                    >
                       {coverUrl ? (
                         <img
                           src={coverUrl}
@@ -425,7 +546,12 @@ export default function CustomerDashboardPage() {
                     </div>
 
                     <div className="ecommerce-card-content">
-                      <h3 className="ecommerce-book-title" title={book.title}>
+                      <h3
+                        className="ecommerce-book-title"
+                        title={book.title}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => openBorrowModal(book)}
+                      >
                         {book.title}
                       </h3>
                       <p className="ecommerce-book-author" title={(book.authorNames || []).join(', ')}>
@@ -437,15 +563,32 @@ export default function CustomerDashboardPage() {
                           <span className="stock-dot" />
                           {book.quantityAvailable > 0 ? `Còn ${book.quantityAvailable} cuốn` : 'Hết sách'}
                         </span>
-                        {can('BORROW_USE') && book.quantityAvailable > 0 && !activeLoan && (
-                          <button
-                            className="btn btn-sm btn-primary ecommerce-borrow-btn"
-                            type="button"
-                            onClick={() => borrowBook(book)}
-                            disabled={busyBook === book.id}
-                          >
-                            {busyBook === book.id ? 'Đang mượn…' : 'Mượn sách'}
-                          </button>
+                        {can('BORROW_USE') && book.quantityAvailable > 0 && (
+                          history.some((r) => (r.status === 'BORROWED' || r.status === 'PENDING') && r.bookId === book.id) ? (
+                            <Link
+                              to="/my-loans"
+                              className="btn btn-sm btn-secondary ecommerce-borrow-btn"
+                              title="Bạn đang mượn hoặc đang chờ duyệt cuốn sách này."
+                            >
+                              Đang giữ sách này
+                            </Link>
+                          ) : reachedBorrowLimit ? (
+                            <Link
+                              to="/my-loans"
+                              className="btn btn-sm btn-secondary ecommerce-borrow-btn"
+                              title="Bạn đã đạt giới hạn tối đa 2 cuốn theo quy định thư viện."
+                            >
+                              Đã đạt giới hạn (2/2)
+                            </Link>
+                          ) : (
+                            <button
+                              className="btn btn-sm btn-primary ecommerce-borrow-btn"
+                              type="button"
+                              onClick={() => openBorrowModal(book)}
+                            >
+                              Mượn sách {totalActiveLoans === 1 ? '(Lượt 2/2)' : ''}
+                            </button>
+                          )
                         )}
                       </div>
                     </div>
@@ -469,8 +612,7 @@ export default function CustomerDashboardPage() {
         <section className="reader-history-section">
           <div className="reader-section-heading">
             <div>
-              <span className="reader-kicker">NHỮNG TRANG ĐÃ ĐỌC</span>
-              <h2>Hoạt động gần đây</h2>
+              <h2>Sách mượn gần đây</h2>
             </div>
             <Link to="/my-loans" className="reader-text-link">Mở lịch sử <ChevronRightIcon width={15} height={15} /></Link>
           </div>
@@ -486,6 +628,129 @@ export default function CustomerDashboardPage() {
             ))}
           </div>
         </section>
+      )}
+
+      {/* Borrow Request Modal with Return Date Selection */}
+      {requestingBook && (
+        <Modal
+          title={`Đăng ký mượn: ${requestingBook.title}`}
+          onClose={() => setRequestingBook(null)}
+          footer={
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setRequestingBook(null)}
+              disabled={borrowSubmitting}
+            >
+              Huỷ bỏ
+            </button>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {borrowModalError && <Alert type="error">{borrowModalError}</Alert>}
+
+            <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+              {getBookCover(requestingBook) ? (
+                <img
+                  src={getBookCover(requestingBook)}
+                  alt={requestingBook.title}
+                  style={{ width: 64, height: 90, objectFit: 'cover', borderRadius: 'var(--radius-sm)', boxShadow: 'var(--shadow-sm)' }}
+                />
+              ) : (
+                <div style={{ width: 64, height: 90, borderRadius: 'var(--radius-sm)', background: 'var(--color-bg-subtle)', border: '1px solid var(--color-border-default)', display: 'grid', placeItems: 'center', color: 'var(--color-text-tertiary)' }}>
+                  <BookIcon width={24} height={24} />
+                </div>
+              )}
+              <div>
+                <h3 style={{ fontSize: 16, marginBottom: 4 }}>{requestingBook.title}</h3>
+                <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 6 }}>
+                  Tác giả: {(requestingBook.authorNames || []).join(', ') || 'Chưa cập nhật'}
+                </div>
+                <span className="badge badge-neutral">{requestingBook.categoryName || 'Chưa phân loại'}</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleBorrowSubmit}>
+              {totalActiveLoans > 0 && (
+                <div
+                  style={{
+                    fontSize: 12.5,
+                    backgroundColor: 'var(--color-bg-subtle)',
+                    padding: '6px 10px',
+                    borderRadius: 'var(--radius-sm)',
+                    marginBottom: 10,
+                    color: 'var(--color-text-secondary)',
+                  }}
+                >
+                  Bạn hiện đang có <strong>{totalActiveLoans}/2 cuốn</strong> (còn 1 lượt mượn khả dụng).
+                </div>
+              )}
+
+              <div className="field" style={{ marginBottom: 12 }}>
+                <label htmlFor="dash-modal-return-date" style={{ fontWeight: 600, fontSize: 13 }}>
+                  Chọn ngày dự kiến hoàn trả sách:
+                </label>
+                <input
+                  id="dash-modal-return-date"
+                  type="date"
+                  min={getMinReturnDate()}
+                  max={getMaxReturnDate()}
+                  value={requestedDueDate}
+                  onChange={(e) => setRequestedDueDate(e.target.value)}
+                  required
+                  style={{ padding: '8px 12px', fontSize: 14 }}
+                />
+                <div className="field-hint" style={{ marginTop: 6, lineHeight: 1.45, fontSize: 12 }}>
+                  • <strong>Thời hạn mượn:</strong> 10 ngày kể từ ngày nhận tài liệu.<br />
+                  • <strong>Thời gian đáp ứng:</strong> 1 – 3 ngày làm việc.<br />
+                  • <strong>Phí dịch vụ:</strong> 20.000 đ/lần mượn.<br />
+                  • <strong>Phí trễ hạn:</strong> 5.000 đ/cuốn/ngày nếu quá hạn.
+                </div>
+              </div>
+
+              {/* Quick Preset Buttons: 3, 5, 7, 10 days */}
+              <div style={{ display: 'flex', gap: 6, marginBottom: 18, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="btn btn-small btn-secondary"
+                  onClick={() => setRequestedDueDate(getFutureDate(3))}
+                >
+                  +3 ngày
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-small btn-secondary"
+                  onClick={() => setRequestedDueDate(getFutureDate(5))}
+                >
+                  +5 ngày
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-small btn-secondary"
+                  onClick={() => setRequestedDueDate(getFutureDate(7))}
+                >
+                  +7 ngày
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-small btn-secondary"
+                  onClick={() => setRequestedDueDate(getFutureDate(10))}
+                >
+                  +10 ngày (Tối đa)
+                </button>
+              </div>
+
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={borrowSubmitting}
+                style={{ width: '100%', justifyContent: 'center' }}
+              >
+                {borrowSubmitting ? 'Đang gửi yêu cầu...' : 'Xác nhận gửi yêu cầu mượn'}
+              </button>
+            </form>
+          </div>
+        </Modal>
       )}
     </div>
   )

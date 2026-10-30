@@ -2,6 +2,8 @@ package com.fresher.library.config;
 
 import com.fresher.library.entity.*;
 import com.fresher.library.repository.AccountRepository;
+import com.fresher.library.repository.BookRepository;
+import com.fresher.library.repository.BorrowRecordRepository;
 import com.fresher.library.repository.MemberRepository;
 import com.fresher.library.repository.PermissionGroupRepository;
 import com.fresher.library.repository.PermissionRepository;
@@ -53,6 +55,8 @@ public class DataSeeder implements CommandLineRunner {
     private final MemberRepository memberRepository;
     private final PermissionRepository permissionRepository;
     private final PermissionGroupRepository groupRepository;
+    private final BookRepository bookRepository;
+    private final BorrowRecordRepository borrowRecordRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${app.default-admin.email}")
@@ -135,7 +139,96 @@ public class DataSeeder implements CommandLineRunner {
                     if (changed) accountRepository.save(a);
                 });
 
+        // 5. Seed tai khoan doc gia mau va ho so muon qua han mau (yeu cau kich ban 28/10/2026: qua han 14 ngay, phat 70.000 VND)
+        seedDemoCustomerAndOverdueRecord(borrowGroup);
+
         log.info("Seed phan quyen xong: {} quyen, admin={}", perms.size(), adminEmail);
+    }
+
+    private void seedDemoCustomerAndOverdueRecord(PermissionGroup borrowGroup) {
+        String customerEmail = "customer@library.local";
+        Account customer = accountRepository.findByEmail(customerEmail).orElseGet(() ->
+                accountRepository.save(Account.builder()
+                        .email(customerEmail)
+                        .password(passwordEncoder.encode("Customer@123"))
+                        .role(Role.USER)
+                        .enabled(true)
+                        .emailVerified(true)
+                        .permissionGroup(borrowGroup)
+                        .build()));
+
+        Member customerMember = memberRepository.findByAccount_Id(customer.getId()).orElseGet(() ->
+                memberRepository.save(Member.builder()
+                        .fullName("Độc giả Mẫu")
+                        .account(customer)
+                        .build()));
+
+        // Neu chua co sach trong kho, khoi tao dau sach mac dinh
+        if (bookRepository.count() == 0) {
+            bookRepository.save(Book.builder()
+                    .isbn("978-604-0-12345-1")
+                    .title("Tắt đèn")
+                    .description("Tác phẩm văn học hiện thực xuất sắc của nhà văn Ngô Tất Tố, phản ánh cuộc sống cơ cực của người nông dân Việt Nam trước Cách mạng.")
+                    .quantityTotal(5)
+                    .quantityAvailable(4)
+                    .status(BookStatus.IN_CIRCULATION)
+                    .imgUrl("/anhbia/tatden.jpg")
+                    .build());
+        }
+
+        // Dong bo link anh bia tu file cuc bo /anhbia/... cho cac sach trong he thong
+        List<Book> existingBooks = bookRepository.findAll();
+        for (Book b : existingBooks) {
+            String title = b.getTitle() != null ? b.getTitle().toLowerCase() : "";
+            String localCover = null;
+            if (title.contains("tắt đèn") || title.contains("tat den")) localCover = "/anhbia/tatden.jpg";
+            else if (title.contains("số đỏ") || title.contains("so do")) localCover = "/anhbia/sodo.webp";
+            else if (title.contains("truyện kiều") || title.contains("truyen kieu")) localCover = "/anhbia/truyenkieu.webp";
+            else if (title.contains("nhà giả kim") || title.contains("nha gia kim")) localCover = "/anhbia/nhagiakim.jpg";
+            else if (title.contains("đắc nhân tâm") || title.contains("dac nhan tam")) localCover = "/anhbia/dacnhantam.jpg";
+            else if (title.contains("dế mèn") || title.contains("de men")) localCover = "/anhbia/demenphieuluuky.jpg";
+            else if (title.contains("giải tích") || title.contains("giai tich") || title.contains("toán")) localCover = "/anhbia/giaitich1.jpg";
+            else if (title.contains("lược sử thời gian") || title.contains("luoc su thoi gian")) localCover = "/anhbia/luocsuthoigian.webp";
+            else if (title.contains("lược sử loài người") || title.contains("sapiens") || title.contains("luoc su loai nguoi")) localCover = "/anhbia/luocsuloainguoi.jpg";
+            else if (title.contains("vật lý") || title.contains("vat ly")) localCover = "/anhbia/vatlydaicuong.png";
+            else if (title.contains("clean architecture") || title.contains("clean code")) localCover = "/anhbia/CleanArchitecture.jpg";
+            else if (title.contains("spring in action") || title.contains("spring boot in action")) localCover = "/anhbia/springbootinaction.webp";
+            else if (title.contains("spring")) localCover = "/anhbia/springboot.jpg";
+            else if (title.contains("cấu trúc dữ liệu") || title.contains("cau truc du lieu") || title.contains("giải thuật") || title.contains("giai thuat")) localCover = "/anhbia/cautrucdulieuvagiaithuat.jpg";
+            else if (title.contains("cơ sở dữ liệu") || title.contains("co so du lieu") || title.contains("database")) localCover = "/anhbia/cosodulieuquanhe.jpg";
+            else if (title.contains("mạng máy tính") || title.contains("mang may tinh") || title.contains("network")) localCover = "/anhbia/mangmaytinh.jpg";
+            else if (title.contains("java")) localCover = "/anhbia/javacore.jpg";
+
+            if (localCover != null && (b.getImgUrl() == null || b.getImgUrl().contains("unsplash") || b.getImgUrl().isBlank())) {
+                b.setImgUrl(localCover);
+                bookRepository.save(b);
+                log.info("Cap nhat anh bia local cho sach: id={}, title={}, imgUrl={}", b.getId(), b.getTitle(), localCover);
+            }
+        }
+
+        // Kiem tra ban ghi muon sach qua han mau theo dung yeu cau:
+        // Due date: 14 October 2026. Reference date: 28 October 2026.
+        // Overdue duration: 14 days. Rate: 5,000 VND/day -> 70,000 VND.
+        boolean hasOverdue = borrowRecordRepository.findByMember_IdAndStatus(customerMember.getId(), BorrowStatus.BORROWED)
+                .stream()
+                .anyMatch(r -> java.time.LocalDate.of(2026, 10, 14).equals(r.getDueDate()));
+
+        if (!hasOverdue) {
+            Book book = bookRepository.findAll().stream().findFirst().orElse(null);
+            if (book != null) {
+                BorrowRecord overdueRecord = BorrowRecord.builder()
+                        .member(customerMember)
+                        .book(book)
+                        .borrowDate(java.time.LocalDate.of(2026, 10, 1))
+                        .dueDate(java.time.LocalDate.of(2026, 10, 14))
+                        .returnDate(null)
+                        .status(BorrowStatus.BORROWED)
+                        .build();
+                borrowRecordRepository.save(overdueRecord);
+                log.info("Da khoi tao ban ghi muon qua han mau: Member={}, Book={}, DueDate=2026-10-14",
+                        customerMember.getFullName(), book.getTitle());
+            }
+        }
     }
 
     private PermissionGroup seedGroup(String name, String description, Collection<Permission> permissions) {

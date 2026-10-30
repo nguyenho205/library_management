@@ -18,4 +18,5 @@ public interface BookService {
     BookResponse restore(Long id);
     void delete(Long id);
     int importFromCsv(MultipartFile file);
+    String uploadCover(MultipartFile file);
 }
