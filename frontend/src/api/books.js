@@ -2,6 +2,7 @@ import client from './client'
 
 export const booksApi = {
   search: (params) => client.get('/books', { params }).then((r) => r.data.data),
+  getById: (id) => client.get(`/books/${id}`).then((r) => r.data.data),
   getRecommendations: (tab = 'CATEGORY', limit = 4) => client.get('/books/recommendations', { params: { tab, limit } }).then((r) => r.data.data),
   create: (payload) => client.post('/books', payload).then((r) => r.data.data),
   update: (id, payload) => client.put(`/books/${id}`, payload).then((r) => r.data.data),
@@ -12,5 +13,10 @@ export const booksApi = {
     const form = new FormData()
     form.append('file', file)
     return client.post('/books/import', form, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data)
+  },
+  uploadCover: (file) => {
+    const form = new FormData()
+    form.append('file', file)
+    return client.post('/books/upload-cover', form, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data.data)
   },
 }

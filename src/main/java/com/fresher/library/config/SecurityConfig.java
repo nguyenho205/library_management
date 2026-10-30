@@ -54,6 +54,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public: chi nhung endpoint khong can dang nhap
                         .requestMatchers(
+                                "/anhbia/**",
+                                "/biasach/**",
                                 "/api/auth/register",
                                 "/api/auth/login",
                                 "/api/auth/refresh",

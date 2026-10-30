@@ -117,4 +117,11 @@ public class BookController {
         int imported = bookService.importFromCsv(file);
         return ResponseEntity.ok(ApiResponse.success("Import thanh cong " + imported + " sach moi", imported));
     }
+
+    @PostMapping(value = "/upload-cover", consumes = "multipart/form-data")
+    @PreAuthorize("hasAnyAuthority('BOOK_CREATE', 'BOOK_UPDATE')")
+    public ResponseEntity<ApiResponse<String>> uploadCover(@RequestParam("file") MultipartFile file) {
+        String coverUrl = bookService.uploadCover(file);
+        return ResponseEntity.ok(ApiResponse.success("Tải lên ảnh bìa thành công", coverUrl));
+    }
 }

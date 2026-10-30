@@ -29,12 +29,17 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.fresher.library.entity.BookStatus;
@@ -116,81 +121,55 @@ public class BookServiceImpl implements BookService {
 
             if (b.getAuthors() != null) {
                 for (Author a : b.getAuthors()) {
-                    authorScores.merge(a.getId(), recencyWeight * 8, Integer::sum);
+                    authorScores.merge(a.getId(), recencyWeight * 5, Integer::sum);
                 }
             }
         }
 
-        // Dem tong luot muon toan he thong
-        Map<Long, Long> globalBorrowCounts = borrowRecordRepository.findAll().stream()
-                .filter(r -> r.getBook() != null)
-                .collect(Collectors.groupingBy(r -> r.getBook().getId(), Collectors.counting()));
-
-        // 3. Loc danh sach ung vien: BAT BUOC dang phat hanh (IN_CIRCULATION), khong lay sach DISCONTINUED
-        List<Book> candidates = bookRepository.findAll().stream()
-                .filter(b -> b.getStatus() == null || b.getStatus() == BookStatus.IN_CIRCULATION)
+        List<Book> availableBooks = bookRepository.findAll().stream()
+                .filter(b -> b.getStatus() == BookStatus.IN_CIRCULATION)
                 .filter(b -> !currentlyBorrowedBookIds.contains(b.getId()))
                 .collect(Collectors.toList());
 
-        // 4. Cham diem phu hop theo tung Tab
-        class ScoredBook {
-            final Book book;
-            final double score;
+        List<Book> scoredBooks = new ArrayList<>(availableBooks);
 
-            ScoredBook(Book book, double score) {
-                this.book = book;
-                this.score = score;
-            }
+        if ("CATEGORY".equals(activeTab)) {
+            scoredBooks.sort((b1, b2) -> {
+                int s1 = (b1.getCategory() != null) ? categoryScores.getOrDefault(b1.getCategory().getId(), 0) : 0;
+                int s2 = (b2.getCategory() != null) ? categoryScores.getOrDefault(b2.getCategory().getId(), 0) : 0;
+                if (s1 != s2) return Integer.compare(s2, s1);
+                return Long.compare(b2.getId(), b1.getId());
+            });
+        } else if ("AUTHOR".equals(activeTab)) {
+            scoredBooks.sort((b1, b2) -> {
+                int s1 = 0;
+                if (b1.getAuthors() != null) {
+                    for (Author a : b1.getAuthors()) s1 += authorScores.getOrDefault(a.getId(), 0);
+                }
+                int s2 = 0;
+                if (b2.getAuthors() != null) {
+                    for (Author a : b2.getAuthors()) s2 += authorScores.getOrDefault(a.getId(), 0);
+                }
+                if (s1 != s2) return Integer.compare(s2, s1);
+                return Long.compare(b2.getId(), b1.getId());
+            });
+        } else {
+            // POPULAR / FALLBACK
+            Map<Long, Long> borrowCounts = borrowRecordRepository.findAll().stream()
+                    .filter(r -> r.getBook() != null)
+                    .collect(Collectors.groupingBy(r -> r.getBook().getId(), Collectors.counting()));
+
+            scoredBooks.sort((b1, b2) -> {
+                long c1 = borrowCounts.getOrDefault(b1.getId(), 0L);
+                long c2 = borrowCounts.getOrDefault(b2.getId(), 0L);
+                if (c1 != c2) return Long.compare(c2, c1);
+                return Long.compare(b2.getId(), b1.getId());
+            });
         }
 
-        List<ScoredBook> scored = new ArrayList<>();
-
-        for (Book b : candidates) {
-            double score = 0.0;
-
-            if ("CATEGORY".equals(activeTab)) {
-                // TAB 1: THE LOAI YEU THICH
-                if (b.getCategory() != null && categoryScores.containsKey(b.getCategory().getId())) {
-                    score += categoryScores.get(b.getCategory().getId()) * 10.0;
-                }
-                if (!allBorrowedBookIds.contains(b.getId())) score += 15.0;
-                if (b.getQuantityAvailable() != null && b.getQuantityAvailable() > 0) score += 20.0;
-            } else if ("AUTHOR".equals(activeTab)) {
-                // TAB 2: TAC GIA THUONG THEO DOI
-                if (b.getAuthors() != null) {
-                    for (Author a : b.getAuthors()) {
-                        if (authorScores.containsKey(a.getId())) {
-                            score += authorScores.get(a.getId()) * 10.0;
-                        }
-                    }
-                }
-                if (!allBorrowedBookIds.contains(b.getId())) score += 15.0;
-                if (b.getQuantityAvailable() != null && b.getQuantityAvailable() > 0) score += 20.0;
-            } else {
-                // TAB 3: SACH DUOC YEU THICH (MUON NHIEU NHAT TOAN HE THONG)
-                long borrows = globalBorrowCounts.getOrDefault(b.getId(), 0L);
-                score += borrows * 10.0;
-                if (!allBorrowedBookIds.contains(b.getId())) score += 5.0;
-                if (b.getQuantityAvailable() != null && b.getQuantityAvailable() > 0) score += 10.0;
-            }
-
-            scored.add(new ScoredBook(b, score));
-        }
-
-        // 5. Sap xep giam dan theo diem so
-        scored.sort((a, b) -> {
-            int cmp = Double.compare(b.score, a.score);
-            if (cmp != 0) return cmp;
-            if (a.book.getCreatedAt() != null && b.book.getCreatedAt() != null) {
-                return b.book.getCreatedAt().compareTo(a.book.getCreatedAt());
-            }
-            return Long.compare(b.book.getId(), a.book.getId());
-        });
-
-        // 6. Lay top safeLimit cuon va tra ve BookResponse
-        return scored.stream()
+        return scoredBooks.stream()
                 .limit(safeLimit)
-                .map(s -> toResponse(s.book))
+                .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
@@ -208,13 +187,18 @@ public class BookServiceImpl implements BookService {
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thể loại sách."));
 
+        String coverImg = request.getImgUrl();
+        if (coverImg == null || coverImg.isBlank()) {
+            coverImg = resolveDefaultCover(request.getTitle());
+        }
+
         Book book = Book.builder()
                 .isbn(request.getIsbn())
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .quantityTotal(request.getQuantityTotal())
                 .quantityAvailable(request.getQuantityTotal())
-                .imgUrl(request.getImgUrl())
+                .imgUrl(coverImg)
                 .category(category)
                 .authors(resolveAuthors(request.getAuthorNames()))
                 .build();
@@ -332,12 +316,17 @@ public class BookServiceImpl implements BookService {
 
         int quantity = Integer.parseInt(record.get("quantityTotal").trim());
 
+        String cover = record.isMapped("imgUrl") && !record.get("imgUrl").isBlank()
+                ? record.get("imgUrl").trim()
+                : resolveDefaultCover(record.get("title"));
+
         Book book = Book.builder()
                 .isbn(isbn)
                 .title(record.get("title"))
                 .description(record.isMapped("description") ? record.get("description") : null)
                 .quantityTotal(quantity)
                 .quantityAvailable(quantity)
+                .imgUrl(cover)
                 .category(category)
                 .authors(resolveAuthors(authorNames))
                 .build();
@@ -379,5 +368,73 @@ public class BookServiceImpl implements BookService {
                 .status(book.getStatus() != null ? book.getStatus().name() : BookStatus.IN_CIRCULATION.name())
                 .imgUrl(book.getImgUrl())
                 .build();
+    }
+
+    @Override
+    public String uploadCover(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new BadRequestException("Vui lòng chọn tệp ảnh bìa sách.");
+        }
+        String originalFilename = file.getOriginalFilename();
+        String extension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
+        }
+        if (!List.of(".jpg", ".jpeg", ".png", ".webp", ".gif").contains(extension)) {
+            throw new BadRequestException("Định dạng tệp không hợp lệ. Chỉ chấp nhận các định dạng ảnh: JPG, JPEG, PNG, WEBP, GIF.");
+        }
+
+        // Tên file lưu trên ổ đĩa
+        String safeName = "cover_" + System.currentTimeMillis() + "_" + UUID.randomUUID().toString().substring(0, 8) + extension;
+
+        try {
+            // 1. Lưu vào thư mục frontend/public/anhbia
+            Path destFrontend = Paths.get("frontend/public/anhbia").toAbsolutePath().normalize();
+            if (!Files.exists(destFrontend)) {
+                Files.createDirectories(destFrontend);
+            }
+            Path targetFile = destFrontend.resolve(safeName);
+            Files.copy(file.getInputStream(), targetFile, StandardCopyOption.REPLACE_EXISTING);
+
+            // 2. Đồng bộ sang public/anhbia ở root (nếu có)
+            try {
+                Path destRoot = Paths.get("public/anhbia").toAbsolutePath().normalize();
+                if (!Files.exists(destRoot)) {
+                    Files.createDirectories(destRoot);
+                }
+                Files.copy(targetFile, destRoot.resolve(safeName), StandardCopyOption.REPLACE_EXISTING);
+            } catch (Exception ignored) {
+            }
+
+            log.info("Đã tải lên ảnh bìa mới: {}", safeName);
+            // Trả về link tương đối để lưu vào cơ sở dữ liệu
+            return "/anhbia/" + safeName;
+        } catch (IOException e) {
+            log.error("Không thể lưu ảnh bìa: {}", e.getMessage(), e);
+            throw new BadRequestException("Lỗi lưu trữ tệp ảnh bìa: " + e.getMessage());
+        }
+    }
+
+    public static String resolveDefaultCover(String title) {
+        if (title == null || title.isBlank()) return null;
+        String t = title.toLowerCase();
+        if (t.contains("tắt đèn") || t.contains("tat den")) return "/anhbia/tatden.jpg";
+        if (t.contains("số đỏ") || t.contains("so do")) return "/anhbia/sodo.webp";
+        if (t.contains("truyện kiều") || t.contains("truyen kieu")) return "/anhbia/truyenkieu.webp";
+        if (t.contains("nhà giả kim") || t.contains("nha gia kim")) return "/anhbia/nhagiakim.jpg";
+        if (t.contains("đắc nhân tâm") || t.contains("dac nhan tam")) return "/anhbia/dacnhantam.jpg";
+        if (t.contains("dế mèn") || t.contains("de men")) return "/anhbia/demenphieuluuky.jpg";
+        if (t.contains("giải tích") || t.contains("giai tich") || t.contains("toán")) return "/anhbia/giaitich1.jpg";
+        if (t.contains("lược sử thời gian") || t.contains("luoc su thoi gian")) return "/anhbia/luocsuthoigian.webp";
+        if (t.contains("lược sử loài người") || t.contains("sapiens") || t.contains("luoc su loai nguoi")) return "/anhbia/luocsuloainguoi.jpg";
+        if (t.contains("vật lý") || t.contains("vat ly")) return "/anhbia/vatlydaicuong.png";
+        if (t.contains("clean architecture") || t.contains("clean code")) return "/anhbia/CleanArchitecture.jpg";
+        if (t.contains("spring in action") || t.contains("spring boot in action")) return "/anhbia/springbootinaction.webp";
+        if (t.contains("spring")) return "/anhbia/springboot.jpg";
+        if (t.contains("cấu trúc dữ liệu") || t.contains("cau truc du lieu") || t.contains("giải thuật") || t.contains("giai thuat")) return "/anhbia/cautrucdulieuvagiaithuat.jpg";
+        if (t.contains("cơ sở dữ liệu") || t.contains("co so du lieu") || t.contains("database")) return "/anhbia/cosodulieuquanhe.jpg";
+        if (t.contains("mạng máy tính") || t.contains("mang may tinh") || t.contains("network")) return "/anhbia/mangmaytinh.jpg";
+        if (t.contains("java")) return "/anhbia/javacore.jpg";
+        return null;
     }
 }
