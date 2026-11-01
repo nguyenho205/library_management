@@ -12,6 +12,8 @@ public interface MemberService {
                                          LocalDate dobFrom, LocalDate dobTo, Boolean enabled, int page, int size);
     MemberResponse getById(Long id);
     MemberResponse getByEmail(String email);
+    MemberResponse getCurrentProfile(String email);
+    MemberResponse updateCurrentProfile(String email, MemberUpdateRequest request);
     MemberResponse create(RegisterRequest request);
     MemberResponse update(Long id, MemberUpdateRequest request);
     MemberResponse lock(Long id);

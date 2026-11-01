@@ -48,6 +48,21 @@ public class MemberController {
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<MemberResponse>> getCurrentProfile(org.springframework.security.core.Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.success(memberService.getCurrentProfile(authentication.getName())));
+    }
+
+    @PutMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<MemberResponse>> updateCurrentProfile(
+            org.springframework.security.core.Authentication authentication,
+            @Valid @RequestBody MemberUpdateRequest request) {
+        MemberResponse updated = memberService.updateCurrentProfile(authentication.getName(), request);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật thông tin cá nhân thành công", updated));
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('MEMBER_VIEW')")
     public ResponseEntity<ApiResponse<MemberResponse>> getById(@PathVariable Long id) {
