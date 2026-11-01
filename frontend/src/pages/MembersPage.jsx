@@ -114,7 +114,6 @@ export default function MembersPage() {
       <div className="page-head">
         <div>
           <h1>Hồ sơ thành viên</h1>
-          <p>Quản lý danh sách độc giả, thông tin liên lạc và trạng thái xác thực tài khoản</p>
         </div>
         {canCreate && (
           <div className="page-actions">

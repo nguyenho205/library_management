@@ -10,10 +10,11 @@ import {
   SettingsIcon,
   ShieldIcon,
   ChevronRightIcon,
+  CirculationIcon,
 } from '../components/Icons'
 
 export default function DashboardPage() {
-  const { user, isAdmin, can } = useAuth()
+  const { can } = useAuth()
   const [stats, setStats] = useState({ books: null, members: null, maintenance: null })
 
   useEffect(() => {
@@ -39,12 +40,6 @@ export default function DashboardPage() {
       <div className="page-head">
         <div>
           <h1>Tổng quan quản trị</h1>
-          <p>
-            Xin chào, <strong>{user?.email}</strong> · Vai trò:{' '}
-            <span className={`role-pill ${isAdmin ? 'admin' : ''}`}>
-              {isAdmin ? 'Thủ thư' : 'Thành viên'}
-            </span>
-          </p>
         </div>
       </div>
 
@@ -57,7 +52,6 @@ export default function DashboardPage() {
               <span className="stat-icon"><BookIcon width={18} height={18} /></span>
             </div>
             <div className="stat-value">{stats.books !== null ? stats.books : '…'}</div>
-            <div className="stat-subtext">Đầu sách được quản lý trong hệ thống</div>
           </div>
         )}
 
@@ -68,7 +62,6 @@ export default function DashboardPage() {
               <span className="stat-icon"><UsersIcon width={18} height={18} /></span>
             </div>
             <div className="stat-value">{stats.members !== null ? stats.members : '…'}</div>
-            <div className="stat-subtext">Độc giả đã đăng ký tài khoản</div>
           </div>
         )}
 
@@ -87,12 +80,8 @@ export default function DashboardPage() {
                 </span>
               )}
             </div>
-            <div className="stat-subtext">
-              {stats.maintenance ? 'Chỉ mở cho quản trị viên' : 'Sẵn sàng phục vụ bạn đọc'}
-            </div>
           </div>
         )}
-
       </div>
 
       {/* Meaningful Quick Shortcuts */}
@@ -109,6 +98,16 @@ export default function DashboardPage() {
             </div>
           </Link>
         )}
+
+        <Link to="/admin/circulation" className="shortcut-card">
+          <div className="shortcut-icon-box">
+            <CirculationIcon width={20} height={20} />
+          </div>
+          <div>
+            <div className="shortcut-title">Lưu thông & Duyệt mượn</div>
+            <div className="shortcut-desc">Phê duyệt yêu cầu mượn, theo dõi hạn trả, quản lý quá hạn và tiền phạt.</div>
+          </div>
+        </Link>
 
         {can('MEMBER_VIEW') && (
           <Link to="/admin/members" className="shortcut-card">

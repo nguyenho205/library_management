@@ -82,7 +82,6 @@ export default function PermissionsPage() {
       <div className="page-head">
         <div>
           <h1>Phân quyền hệ thống</h1>
-          <p>Tổ chức các quyền chi tiết thành các nhóm vai trò, sau đó gán nhóm quyền cho từng tài khoản</p>
         </div>
         <div className="page-actions">
           <button
@@ -174,10 +173,6 @@ export default function PermissionsPage() {
       {/* Account Assignment Section */}
       <section>
         <h2>Gán nhóm quyền cho tài khoản</h2>
-        <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)', marginBottom: 16 }}>
-          Mỗi tài khoản chỉ thuộc một nhóm quyền. Nhóm quản trị toàn quyền chỉ dành cho tài khoản quản trị.
-        </p>
-
         {loading && !accounts ? (
           <Skeleton rows={5} />
         ) : accounts && (
