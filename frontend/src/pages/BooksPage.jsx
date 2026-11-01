@@ -1255,7 +1255,7 @@ function BookFormModal({ initial, categories, onClose, onSaved }) {
                 id="b-img"
                 value={form.imgUrl}
                 onChange={set('imgUrl')}
-                placeholder="Đường dẫn link ảnh bìa (ví dụ: /anhbia/tatden.jpg)"
+                placeholder="Đường dẫn link ảnh bìa"
                 style={{ fontSize: 12 }}
               />
 

@@ -47,10 +47,8 @@ export const CONDITION_MAP = {
     color: '#059669',
     bgColor: 'rgba(16, 185, 129, 0.08)',
     borderColor: '#10b981',
-    description: 'Sách nguyên vẹn, sạch sẽ, không rách bìa/trang. Sẵn sàng tiếp tục lưu thông.',
     defaultFee: 0,
     restock: true,
-    tag: 'Đạt chuẩn (+1 tồn kho)',
   },
   LIGHT_DAMAGE: {
     key: 'LIGHT_DAMAGE',
@@ -59,10 +57,8 @@ export const CONDITION_MAP = {
     color: '#d97706',
     bgColor: 'rgba(245, 158, 11, 0.08)',
     borderColor: '#f59e0b',
-    description: 'Sờn góc bìa, nếp gấp, bẩn nhẹ không mất nội dung. Vẫn tiếp tục phục vụ bạn đọc.',
     defaultFee: 20000,
     restock: true,
-    tag: 'Chấp nhận (+1 tồn kho)',
   },
   HEAVY_DAMAGE: {
     key: 'HEAVY_DAMAGE',
@@ -71,10 +67,8 @@ export const CONDITION_MAP = {
     color: '#dc2626',
     bgColor: 'rgba(239, 68, 68, 0.08)',
     borderColor: '#ef4444',
-    description: 'Rách nát nhiều trang, bong gáy, ướt nước, mất nội dung. Chuyển thanh lý/phục chế.',
     defaultFee: 100000,
     restock: false,
-    tag: 'Loại bỏ (Không tăng kho)',
   },
   LOST: {
     key: 'LOST',
@@ -83,10 +77,8 @@ export const CONDITION_MAP = {
     color: '#991b1b',
     bgColor: 'rgba(153, 27, 27, 0.1)',
     borderColor: '#b91c1c',
-    description: 'Độc giả làm mất sách. Bồi thường x3 giá bìa + 50.000 đ phí kỹ thuật theo quy định.',
     defaultFee: 200000,
     restock: false,
-    tag: 'Mất sách (Không tăng kho)',
   },
 }
 
@@ -1928,9 +1920,6 @@ export default function CirculationPage({ adminMode = false }) {
                 </div>
                 <div>
                   <h3 className="inspection-modal-title">Kiểm tra tình trạng sách & Xác nhận hoàn trả</h3>
-                  <p className="inspection-modal-subtitle">
-                    Thủ thư thẩm định hiện trạng tài liệu và chốt các khoản phí phát sinh trước khi duyệt hoàn tất.
-                  </p>
                 </div>
               </div>
               <button
@@ -1953,20 +1942,19 @@ export default function CirculationPage({ adminMode = false }) {
                     <div className="inspection-book-title">{inspectionRecord.bookTitle}</div>
                     <div className="inspection-book-meta">
                       <span>Mã phiếu: <strong>#{inspectionRecord.id}</strong></span>
-                      <span> · Độc giả: <strong>{inspectionRecord.memberName || 'Độc giả'}</strong> ({inspectionRecord.memberEmail})</span>
+                      <span> - Độc giả: <strong>{inspectionRecord.memberName || 'Độc giả'}</strong> - Email: {inspectionRecord.memberEmail || 'Email'}</span>
                     </div>
                     <div className="inspection-loan-dates">
                       <span>Ngày mượn: <strong>{formatDate(inspectionRecord.borrowDate)}</strong></span>
-                      <span> · Hạn trả: <strong style={{ color: inspectionRecord.overdue ? 'var(--color-danger-text)' : 'inherit' }}>{formatDate(inspectionRecord.dueDate)}</strong></span>
-                      <span> · Ngày duyệt trả: <strong>Hôm nay</strong></span>
+                      <span> - Hạn trả: <strong style={{ color: inspectionRecord.overdue ? 'var(--color-danger-text)' : 'inherit' }}>{formatDate(inspectionRecord.dueDate)}</strong></span>
                     </div>
 
                     {inspectionRecord.overdue && (
                       <div className="inspection-overdue-alert">
                         <AlertCircleIcon width={16} height={16} />
                         <span>
-                          Sách đã <strong>quá hạn {inspectionRecord.overdueDays} ngày</strong>.
-                          Tiền phạt trễ hạn tự động: <strong>{formatMoney(inspectionRecord.penaltyAmount)}</strong> (5.000 đ/ngày).
+                          Sách đã quá hạn <strong> {inspectionRecord.overdueDays} ngày</strong> -
+                          Tiền phạt trễ hạn tự động: <strong>{formatMoney(inspectionRecord.penaltyAmount)}</strong> (5.000 đ/ngày)
                         </span>
                       </div>
                     )}
@@ -2029,9 +2017,9 @@ export default function CirculationPage({ adminMode = false }) {
                 <div className="inspection-section-title">
                   <span>2. Mức phí bồi thường hư hại / mất tài liệu</span>
                   {inspectionCondition === 'INTACT' ? (
-                    <span className="inspection-optional-tag">(Sách nguyên vẹn: 0 đ)</span>
+                    <span className="inspection-optional-tag"></span>
                   ) : (
-                    <span className="inspection-required-tag">(Có thể điều chỉnh theo giá bìa thực tế)</span>
+                    <span className="inspection-required-tag"></span>
                   )}
                 </div>
 
@@ -2050,21 +2038,6 @@ export default function CirculationPage({ adminMode = false }) {
                       />
                       <span className="inspection-fee-currency">VNĐ</span>
                     </div>
-
-                    <div className="inspection-fee-presets">
-                      <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginRight: 4 }}>Gợi ý nhanh:</span>
-                      {[0, 20000, 50000, 100000, 200000, 300000].map((preset) => (
-                        <button
-                          key={preset}
-                          type="button"
-                          className={`btn-preset ${inspectionDamageFee === preset ? 'active' : ''}`}
-                          onClick={() => setInspectionDamageFee(preset)}
-                          disabled={inspectionCondition === 'INTACT'}
-                        >
-                          {preset === 0 ? '0 đ' : formatMoney(preset)}
-                        </button>
-                      ))}
-                    </div>
                   </div>
                 </div>
               </div>
@@ -2072,12 +2045,12 @@ export default function CirculationPage({ adminMode = false }) {
               {/* Box 4: Ghi chú tình trạng của thủ thư */}
               <div className="inspection-section">
                 <div className="inspection-section-title">
-                  <span>3. Ghi chú kiểm tra của thủ thư (tuỳ chọn)</span>
+                  <span>3. Ghi chú kiểm tra của thủ thư</span>
                 </div>
                 <textarea
                   className="input inspection-notes-input"
                   rows={2}
-                  placeholder="Ví dụ: Gáy sách bị bong góc trên, sờn bìa nhẹ; hoặc độc giả báo thất lạc trên xe bus..."
+                  placeholder="Tình trạng sách"
                   value={inspectionNotes}
                   onChange={(e) => setInspectionNotes(e.target.value)}
                 />
@@ -2088,11 +2061,11 @@ export default function CirculationPage({ adminMode = false }) {
                 <div className="inspection-bill-title">Chốt các khoản thu khi tiếp nhận hoàn trả</div>
                 <div className="inspection-bill-rows">
                   <div className="inspection-bill-row">
-                    <span>Phí trễ hạn {inspectionRecord.overdue ? `(${inspectionRecord.overdueDays} ngày quá hạn)` : ''}:</span>
+                    <span>Phí trễ hạn {inspectionRecord.overdue ? `${inspectionRecord.overdueDays} ngày` : ''}:</span>
                     <span style={{ fontWeight: 600 }}>{formatMoney(inspectionRecord.penaltyAmount || 0)}</span>
                   </div>
                   <div className="inspection-bill-row">
-                    <span>Phí bồi thường hư hỏng / mất sách:</span>
+                    <span>Phí bồi thường:</span>
                     <span style={{ fontWeight: 600 }}>{formatMoney(inspectionDamageFee || 0)}</span>
                   </div>
                   <div className="inspection-bill-divider" />
@@ -2108,12 +2081,12 @@ export default function CirculationPage({ adminMode = false }) {
                   {CONDITION_MAP[inspectionCondition]?.restock ? (
                     <div style={{ color: 'var(--color-success-text)', display: 'flex', alignItems: 'center', gap: 6 }}>
                       <CheckIcon width={15} height={15} />
-                      <span>Sách đạt yêu cầu tiếp tục lưu thông: <strong>Tồn kho khả dụng sẽ tăng thêm +1</strong>.</span>
+                      <span>Sách đạt yêu cầu tiếp tục lưu thông: <strong>Tồn kho sẽ tăng thêm 1</strong></span>
                     </div>
                   ) : (
                     <div style={{ color: 'var(--color-danger-text)', display: 'flex', alignItems: 'center', gap: 6 }}>
                       <AlertCircleIcon width={15} height={15} />
-                      <span>Sách bị hư hỏng nặng hoặc mất: <strong>Tồn kho khả dụng sẽ KHÔNG tăng</strong>.</span>
+                      <span>Sách bị hư hỏng nặng hoặc mất: <strong>Tồn kho sẽ không tăng</strong>.</span>
                     </div>
                   )}
                 </div>
