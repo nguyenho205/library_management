@@ -12,6 +12,7 @@ import MembersPage from './pages/MembersPage'
 import CirculationPage from './pages/CirculationPage'
 import SettingsPage from './pages/SettingsPage'
 import PermissionsPage from './pages/PermissionsPage'
+import ProfilePage from './pages/ProfilePage'
 
 export default function App() {
   return (
@@ -28,14 +29,17 @@ export default function App() {
         <Route path="/catalog" element={<ProtectedRoute permission="BOOK_VIEW"><BooksPage /></ProtectedRoute>} />
         <Route path="/my-loans" element={<ProtectedRoute permission="BORROW_USE"><CirculationPage /></ProtectedRoute>} />
         <Route path="/account" element={<SettingsPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
       </Route>
 
       <Route path="/admin" element={<ProtectedRoute adminOnly><Layout mode="admin" /></ProtectedRoute>}>
         <Route index element={<DashboardPage />} />
         <Route path="books" element={<ProtectedRoute permission="BOOK_VIEW"><BooksPage adminMode /></ProtectedRoute>} />
+        <Route path="circulation" element={<ProtectedRoute permission="BOOK_VIEW"><CirculationPage adminMode /></ProtectedRoute>} />
         <Route path="members" element={<ProtectedRoute permission="MEMBER_VIEW"><MembersPage /></ProtectedRoute>} />
         <Route path="permissions" element={<ProtectedRoute permission="PERMISSION_MANAGE"><PermissionsPage /></ProtectedRoute>} />
         <Route path="settings" element={<SettingsPage adminMode />} />
+        <Route path="profile" element={<ProfilePage adminMode />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

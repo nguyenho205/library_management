@@ -80,6 +80,41 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
+    public MemberResponse getCurrentProfile(String email) {
+        Member member = memberRepository.findByAccount_Email(email)
+                .orElseGet(() -> {
+                    Account account = accountRepository.findByEmail(email)
+                            .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản với email: " + email));
+                    return memberRepository.save(Member.builder()
+                            .fullName("Thành viên")
+                            .account(account)
+                            .build());
+                });
+        return toResponse(member);
+    }
+
+    @Override
+    @Transactional
+    public MemberResponse updateCurrentProfile(String email, MemberUpdateRequest request) {
+        Member member = memberRepository.findByAccount_Email(email)
+                .orElseGet(() -> {
+                    Account account = accountRepository.findByEmail(email)
+                            .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản với email: " + email));
+                    return memberRepository.save(Member.builder()
+                            .fullName(request.getFullName())
+                            .account(account)
+                            .build());
+                });
+        member.setFullName(request.getFullName());
+        member.setDateOfBirth(request.getDateOfBirth());
+        member.setPhone(request.getPhone());
+        member.setAddress(request.getAddress());
+        member = memberRepository.save(member);
+        log.info("Người dùng {} đã cập nhật hồ sơ cá nhân", email);
+        return toResponse(member);
+    }
+
+    @Override
     @Transactional
     public MemberResponse create(RegisterRequest request) {
         // Admin tao truc tiep member moi: khong can qua buoc xac thuc email (khac voi tu dang ky)
