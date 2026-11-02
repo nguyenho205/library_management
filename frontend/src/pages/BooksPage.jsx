@@ -340,127 +340,216 @@ export default function BooksPage({ adminMode = false }) {
 
   return (
     <>
-      <div className="page-head">
-        <div>
-          <h1>{adminMode && isAdmin ? 'Quản lý danh mục sách' : 'Tra cứu & Khám phá sách'}</h1>
-        </div>
-        {(canImport || canCreate) && (
-          <div className="page-actions">
-            {canImport && (
-              <button className="btn btn-secondary" onClick={() => setImporting(true)} type="button">
-                <UploadIcon width={15} height={15} />
-                Nhập từ CSV
-              </button>
-            )}
-            {canCreate && (
-              <button className="btn btn-primary" onClick={() => setEditing({ ...EMPTY_FORM })} type="button">
-                <PlusIcon width={16} height={16} />
-                Thêm sách mới
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
       {notice && <Alert type="success" onClose={() => setNotice('')}>{notice}</Alert>}
       {error && <Alert type="error" onClose={() => setError('')}>{error}</Alert>}
 
-      {/* Segmented Status Tabs: Phat hanh vs Ngung luu hanh (Admin Only) */}
-      {adminMode && (isAdmin || isLibrarian) && (
-        <div className="segmented-tabs" role="tablist" aria-label="Bộ lọc trạng thái phát hành sách">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={statusTab === 'IN_CIRCULATION'}
-            className={`segmented-tab ${statusTab === 'IN_CIRCULATION' ? 'active' : ''}`}
-            onClick={() => {
-              if (statusTab !== 'IN_CIRCULATION') {
-                setStatusTab('IN_CIRCULATION')
-                setPage(0)
-              }
-            }}
-          >
-            <span>Đang phát hành</span>
-            {statusTab === 'IN_CIRCULATION' && data?.totalElements != null && (
-              <span className="segmented-tab-count">{data.totalElements}</span>
-            )}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={statusTab === 'DISCONTINUED'}
-            className={`segmented-tab ${statusTab === 'DISCONTINUED' ? 'active' : ''}`}
-            onClick={() => {
-              if (statusTab !== 'DISCONTINUED') {
-                setStatusTab('DISCONTINUED')
-                setPage(0)
-              }
-            }}
-          >
-            <span>Ngừng lưu hành</span>
-            {statusTab === 'DISCONTINUED' && data?.totalElements != null && (
-              <span className="segmented-tab-count">{data.totalElements}</span>
-            )}
-          </button>
-        </div>
-      )}
+      {!adminMode ? (
+        /* =========================================================================
+           CUSTOMER MODE: NEO-EDITORIAL DISCOVERY HERO & SPOTLIGHT SEARCH
+           ========================================================================= */
+        <section className="catalog-neo-hero">
+          <div className="catalog-neo-hero-head">
+            <div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 14px', borderRadius: 9999, background: 'var(--neo-paper-100)', color: 'var(--neo-cobalt-600)', fontSize: 11.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+                <BookIcon width={13} height={13} /> Thư viện Số & Khám phá Sách
+              </div>
+              <h1 className="catalog-neo-hero-title">Tra cứu & Khám phá Tài liệu</h1>
+              <p style={{ margin: '6px 0 0', color: 'var(--neo-text-muted)', fontSize: 14 }}>
+                Khám phá kho tàng ấn phẩm học thuật, văn học kinh điển và tài liệu nghiên cứu chọn lọc.
+              </p>
+            </div>
+          </div>
 
-      {/* Search and Filters Toolbar */}
-      <form className="toolbar" onSubmit={search}>
-        <div className="field">
-          <label htmlFor="f-title">Tên sách</label>
-          <input
-            id="f-title"
-            value={filters.title}
-            onChange={(e) => setFilters({ ...filters, title: e.target.value })}
-            placeholder="Tìm theo tên sách..."
-          />
-        </div>
-        <div className="field field-narrow">
-          <label htmlFor="f-isbn">Mã ISBN</label>
-          <input
-            id="f-isbn"
-            value={filters.isbn}
-            onChange={(e) => setFilters({ ...filters, isbn: e.target.value })}
-            placeholder="ISBN..."
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="f-author">Tác giả</label>
-          <input
-            id="f-author"
-            value={filters.author}
-            onChange={(e) => setFilters({ ...filters, author: e.target.value })}
-            placeholder="Tên tác giả..."
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="f-cat">Thể loại</label>
-          <select
-            id="f-cat"
-            value={filters.categoryId}
-            onChange={(e) => setFilters({ ...filters, categoryId: e.target.value })}
-          >
-            <option value="">Tất cả thể loại</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="toolbar-actions">
-          <button className="btn btn-primary" type="submit">
-            <SearchIcon width={14} height={14} />
-            Tìm kiếm
-          </button>
-          {hasActiveFilters && (
-            <button className="btn btn-ghost" type="button" onClick={resetFilters}>
-              Xoá lọc
-            </button>
+          <form onSubmit={search}>
+            <div className="catalog-neo-search-spotlight">
+              <SearchIcon width={18} height={18} style={{ color: 'var(--neo-text-light)' }} />
+              <input
+                className="catalog-neo-search-input"
+                value={filters.title}
+                onChange={(e) => setFilters({ ...filters, title: e.target.value })}
+                placeholder="Nhập tên sách, chủ đề hoặc từ khoá cần tìm..."
+              />
+              <button className="catalog-neo-search-btn" type="submit">
+                <SearchIcon width={14} height={14} /> Tìm kiếm
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 14 }}>
+              <input
+                className="input"
+                style={{ borderRadius: 9999, padding: '9px 18px', fontSize: 13, background: 'var(--neo-paper-50)', border: '1px solid var(--neo-border-paper)' }}
+                value={filters.author}
+                onChange={(e) => setFilters({ ...filters, author: e.target.value })}
+                placeholder="Lọc theo tên tác giả..."
+              />
+              <input
+                className="input"
+                style={{ borderRadius: 9999, padding: '9px 18px', fontSize: 13, background: 'var(--neo-paper-50)', border: '1px solid var(--neo-border-paper)' }}
+                value={filters.isbn}
+                onChange={(e) => setFilters({ ...filters, isbn: e.target.value })}
+                placeholder="Lọc theo mã ISBN..."
+              />
+            </div>
+
+            {/* Quick Category Pills */}
+            <div className="catalog-neo-filter-row">
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--neo-text-light)', textTransform: 'uppercase' }}>
+                Thể loại:
+              </span>
+              <button
+                type="button"
+                className={`catalog-neo-cat-pill ${!filters.categoryId ? 'is-active' : ''}`}
+                onClick={() => {
+                  setFilters({ ...filters, categoryId: '' })
+                  setApplied({ ...applied, categoryId: '' })
+                  setPage(0)
+                }}
+              >
+                Tất cả thể loại
+              </button>
+              {categories.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  className={`catalog-neo-cat-pill ${String(filters.categoryId) === String(c.id) ? 'is-active' : ''}`}
+                  onClick={() => {
+                    const nextId = String(filters.categoryId) === String(c.id) ? '' : String(c.id)
+                    setFilters({ ...filters, categoryId: nextId })
+                    setApplied({ ...applied, categoryId: nextId })
+                    setPage(0)
+                  }}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          </form>
+        </section>
+      ) : (
+        /* =========================================================================
+           ADMIN MODE: PAGE HEAD, ACTION BUTTONS, STATUS TABS & TOOLBAR
+           ========================================================================= */
+        <>
+          <div className="page-head">
+            <div>
+              <h1>Quản lý danh mục sách</h1>
+            </div>
+            {(canImport || canCreate) && (
+              <div className="page-actions">
+                {canImport && (
+                  <button className="btn btn-secondary" onClick={() => setImporting(true)} type="button">
+                    <UploadIcon width={15} height={15} />
+                    Nhập từ CSV
+                  </button>
+                )}
+                {canCreate && (
+                  <button className="btn btn-primary" onClick={() => setEditing({ ...EMPTY_FORM })} type="button">
+                    <PlusIcon width={16} height={16} />
+                    Thêm sách mới
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Segmented Status Tabs: Phat hanh vs Ngung luu hanh (Admin Only) */}
+          {(isAdmin || isLibrarian) && (
+            <div className="segmented-tabs" role="tablist" aria-label="Bộ lọc trạng thái phát hành sách">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={statusTab === 'IN_CIRCULATION'}
+                className={`segmented-tab ${statusTab === 'IN_CIRCULATION' ? 'active' : ''}`}
+                onClick={() => {
+                  if (statusTab !== 'IN_CIRCULATION') {
+                    setStatusTab('IN_CIRCULATION')
+                    setPage(0)
+                  }
+                }}
+              >
+                <span>Đang phát hành</span>
+                {statusTab === 'IN_CIRCULATION' && data?.totalElements != null && (
+                  <span className="segmented-tab-count">{data.totalElements}</span>
+                )}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={statusTab === 'DISCONTINUED'}
+                className={`segmented-tab ${statusTab === 'DISCONTINUED' ? 'active' : ''}`}
+                onClick={() => {
+                  if (statusTab !== 'DISCONTINUED') {
+                    setStatusTab('DISCONTINUED')
+                    setPage(0)
+                  }
+                }}
+              >
+                <span>Ngừng lưu hành</span>
+                {statusTab === 'DISCONTINUED' && data?.totalElements != null && (
+                  <span className="segmented-tab-count">{data.totalElements}</span>
+                )}
+              </button>
+            </div>
           )}
-        </div>
-      </form>
+
+          {/* Search and Filters Toolbar */}
+          <form className="toolbar" onSubmit={search}>
+            <div className="field">
+              <label htmlFor="f-title">Tên sách</label>
+              <input
+                id="f-title"
+                value={filters.title}
+                onChange={(e) => setFilters({ ...filters, title: e.target.value })}
+                placeholder="Tìm theo tên sách..."
+              />
+            </div>
+            <div className="field field-narrow">
+              <label htmlFor="f-isbn">Mã ISBN</label>
+              <input
+                id="f-isbn"
+                value={filters.isbn}
+                onChange={(e) => setFilters({ ...filters, isbn: e.target.value })}
+                placeholder="ISBN..."
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="f-author">Tác giả</label>
+              <input
+                id="f-author"
+                value={filters.author}
+                onChange={(e) => setFilters({ ...filters, author: e.target.value })}
+                placeholder="Tên tác giả..."
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="f-cat">Thể loại</label>
+              <select
+                id="f-cat"
+                value={filters.categoryId}
+                onChange={(e) => setFilters({ ...filters, categoryId: e.target.value })}
+              >
+                <option value="">Tất cả thể loại</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="toolbar-actions">
+              <button className="btn btn-primary" type="submit">
+                <SearchIcon width={14} height={14} />
+                Tìm kiếm
+              </button>
+              {hasActiveFilters && (
+                <button className="btn btn-ghost" type="button" onClick={resetFilters}>
+                  Xoá lọc
+                </button>
+              )}
+            </div>
+          </form>
+        </>
+      )}
 
       {/* Active Filter Badges */}
       {hasActiveFilters && (
@@ -681,20 +770,24 @@ export default function BooksPage({ adminMode = false }) {
             </div>
           ) : (
             /* =========================================================================
-               CUSTOMER MODE: HORIZONTAL-CARD BOOK LIST CATALOG (Section 4)
+               CUSTOMER MODE: NEO-EDITORIAL DIGITAL BOOK GALLERY (Section 4)
                ========================================================================= */
-            <div className="customer-catalog-list">
+            <div className="neo-books-grid" style={{ marginBottom: 36 }}>
               {data.content.map((b) => {
                 const cover = resolveBookCover(b)
                 const isAvailable = b.quantityAvailable > 0
                 return (
-                  <article className="catalog-horizontal-card" key={b.id} onClick={() => openBookDetail(b)}>
-                    <div className="catalog-card-cover-wrap">
+                  <article className="neo-book-card" key={b.id}>
+                    <div
+                      className="neo-book-cover-frame"
+                      onClick={() => openBookDetail(b)}
+                      title={`Xem chi tiết & mượn tác phẩm ${b.title}`}
+                    >
                       {cover ? (
                         <img
                           src={cover}
                           alt={b.title}
-                          className="catalog-card-cover"
+                          className="neo-book-cover-img"
                           loading="lazy"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none'
@@ -705,48 +798,49 @@ export default function BooksPage({ adminMode = false }) {
                         />
                       ) : null}
                       <div
-                        className="catalog-card-cover-fallback"
-                        style={{ display: cover ? 'none' : 'flex' }}
+                        className="neo-book-cover-fallback"
+                        style={{
+                          display: cover ? 'none' : 'flex',
+                          width: '100%',
+                          height: '100%',
+                          background: '#1e293b',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#94a3b8',
+                          gap: 8,
+                        }}
                       >
                         <BookIcon width={32} height={32} />
-                        <span>{b.categoryName || 'THƯ VIỆN'}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700 }}>THƯ VIỆN</span>
                       </div>
+                      <span className="neo-category-badge">{b.categoryName || 'Chưa phân loại'}</span>
                     </div>
 
-                    <div className="catalog-card-content">
-                      <div className="catalog-card-header">
-                        <div className="catalog-card-tags">
-                          <span className="badge badge-neutral">{b.categoryName || 'Chưa phân loại'}</span>
-                          <span className="catalog-card-isbn">ISBN: {b.isbn}</span>
-                        </div>
-                      </div>
-
-                      <h3 className="catalog-card-title">{b.title}</h3>
-                      <p className="catalog-card-author">
-                        Tác giả: <strong>{(b.authorNames || []).join(', ') || 'Chưa cập nhật'}</strong>
+                    <div className="neo-book-body">
+                      <h3
+                        className="neo-book-title"
+                        title={b.title}
+                        onClick={() => openBookDetail(b)}
+                      >
+                        {b.title}
+                      </h3>
+                      <p className="neo-book-author" title={(b.authorNames || []).join(', ')}>
+                        {(b.authorNames || []).join(', ') || 'Chưa cập nhật tác giả'}
                       </p>
 
-                      <p className="catalog-card-desc">
-                        {b.description
-                          ? b.description
-                          : 'Tác phẩm đang được lưu trữ và phục vụ bạn đọc tại thư viện. Mở xem chi tiết để chọn ngày mượn phù hợp.'}
-                      </p>
-
-                      <div className="catalog-card-footer">
-                        <span className={`badge ${isAvailable ? 'badge-ok' : 'badge-danger'}`}>
-                          <span className="badge-dot" />
-                          {isAvailable ? `Còn ${b.quantityAvailable} cuốn` : 'Tạm hết sách'}
+                      <div className="neo-book-footer">
+                        <span className="neo-stock-indicator">
+                          <span className={`neo-stock-dot ${isAvailable ? '' : 'empty'}`} />
+                          {isAvailable ? `Còn ${b.quantityAvailable} cuốn` : 'Tạm hết'}
                         </span>
+
                         <button
                           type="button"
-                          className="btn btn-sm btn-primary catalog-card-action"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            openBookDetail(b)
-                          }}
+                          className="neo-borrow-btn neo-borrow-btn-primary"
+                          onClick={() => openBookDetail(b)}
                         >
-                          <span>{isAvailable && !hasExistingLoanOrPending ? 'Xem chi tiết & Mượn' : 'Xem chi tiết'}</span>
-                          <ChevronRightIcon width={14} height={14} />
+                          {isAvailable && !hasExistingLoanOrPending ? 'Mượn sách' : 'Xem chi tiết'}
                         </button>
                       </div>
                     </div>

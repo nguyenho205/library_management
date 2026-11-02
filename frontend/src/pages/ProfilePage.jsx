@@ -141,6 +141,257 @@ export default function ProfilePage({ adminMode = false }) {
     )
   }
 
+  if (!adminMode) {
+    return (
+      <div className="profile-page-container" style={{ maxWidth: 1040, margin: '0 auto' }}>
+        {/* Page Header */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 12px', borderRadius: 9999, background: 'var(--neo-paper-100)', color: 'var(--neo-cobalt-600)', fontSize: 11.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+            <UserIcon width={13} height={13} /> Hồ Sơ Định Danh Bạn Đọc
+          </div>
+          <h1 style={{ fontFamily: 'var(--neo-font-editorial)', fontSize: 32, fontWeight: 700, margin: '0 0 6px', color: 'var(--neo-ink-950)' }}>
+            Thông Tin Cá Nhân & Thẻ Thư Viện
+          </h1>
+          <p style={{ margin: 0, color: 'var(--neo-text-muted)', fontSize: 14 }}>
+            Quản lý thông tin định danh, quyền hạn bạn đọc và bảo mật tài khoản thư viện.
+          </p>
+        </div>
+
+        {error && <Alert type="error">{error}</Alert>}
+        {success && <Alert type="success">{success}</Alert>}
+
+        <div className="profile-neo-layout">
+          {/* Left Column: Digital Member Pass Card & Security Snapshot */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            {/* Digital Reader Pass */}
+            <div className="profile-member-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#94a3b8' }}>
+                  ATHENAEUM READER PASS
+                </span>
+                <span className="badge badge-ok" style={{ fontSize: 10, padding: '2px 8px' }}>
+                  {profile?.enabled ? 'HOẠT ĐỘNG' : 'TẠM KHÓA'}
+                </span>
+              </div>
+
+              <div className="profile-card-chip" />
+
+              <div className="profile-card-id-text">
+                #{profile?.id ? String(profile.id).padStart(6, '0') : '000001'}
+              </div>
+
+              <div className="profile-card-user-info">
+                <div>
+                  <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#94a3b8' }}>
+                    Chủ thẻ bạn đọc
+                  </div>
+                  <div style={{ fontFamily: 'var(--neo-font-display)', fontWeight: 700, fontSize: 16, color: '#ffffff' }}>
+                    {profile?.fullName || user?.email}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#94a3b8' }}>
+                    Hạn mức
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#fde68a' }}>
+                    02 cuốn / 10 ngày
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Account Quick Security Card */}
+            <div
+              style={{
+                background: '#ffffff',
+                border: '1px solid var(--neo-border-paper)',
+                borderRadius: '20px',
+                padding: '22px',
+                boxShadow: 'var(--neo-shadow-card)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                <div
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: '10px',
+                    backgroundColor: 'var(--neo-paper-100)',
+                    color: 'var(--neo-cobalt-600)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <KeyIcon width={16} height={16} />
+                </div>
+                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--neo-ink-950)' }}>
+                  Bảo mật & Mật khẩu
+                </h3>
+              </div>
+              <p style={{ fontSize: 13, color: 'var(--neo-text-muted)', lineHeight: 1.5, margin: '0 0 16px' }}>
+                Thay đổi mật khẩu đăng nhập định kỳ và xác thực email để nhận thông báo hạn trả sách.
+              </p>
+              <Link
+                to="/account"
+                className="btn btn-secondary"
+                style={{ width: '100%', justifyContent: 'space-between', fontSize: 13 }}
+              >
+                <span>Đến Cài đặt tài khoản</span>
+                <ChevronRightIcon width={14} height={14} />
+              </Link>
+            </div>
+          </div>
+
+          {/* Right Column: Personal Information Form */}
+          <div className="profile-form-card">
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 20,
+                borderBottom: '1px solid var(--neo-border-paper)',
+                paddingBottom: 14,
+              }}
+            >
+              <div>
+                <h2 style={{ fontFamily: 'var(--neo-font-editorial)', fontSize: 20, fontWeight: 700, margin: '0 0 4px', color: 'var(--neo-ink-950)' }}>
+                  Chi tiết thông tin cá nhân
+                </h2>
+                <span style={{ fontSize: 12.5, color: 'var(--neo-text-light)' }}>
+                  {isEditing ? 'Đang bật chế độ chỉnh sửa thông tin' : 'Chế độ xem thông tin định danh'}
+                </span>
+              </div>
+              {!isEditing ? (
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={() => setIsEditing(true)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                >
+                  <EditIcon width={14} height={14} />
+                  <span>Chỉnh sửa</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={handleCancel}
+                  disabled={saving}
+                >
+                  Hủy chỉnh sửa
+                </button>
+              )}
+            </div>
+
+            <form onSubmit={handleSave}>
+              <div className="field">
+                <label htmlFor="p-fullname" style={{ fontWeight: 600, fontSize: 13 }}>
+                  Họ và tên <span style={{ color: 'var(--neo-coral-600)' }}>*</span>
+                </label>
+                <input
+                  id="p-fullname"
+                  value={form.fullName}
+                  onChange={setField('fullName')}
+                  placeholder="Nhập họ và tên đầy đủ..."
+                  disabled={!isEditing || saving}
+                  required
+                  style={{ borderRadius: 8, padding: '10px 14px' }}
+                />
+                <div className="field-hint" style={{ fontSize: 12, marginTop: 4 }}>
+                  Tên hiển thị công khai trên thẻ bạn đọc, phiếu mượn và thanh điều hướng.
+                </div>
+              </div>
+
+              <div className="field-row">
+                <div className="field">
+                  <label htmlFor="p-dob" style={{ fontWeight: 600, fontSize: 13 }}>Ngày sinh</label>
+                  <input
+                    id="p-dob"
+                    type="date"
+                    value={form.dateOfBirth}
+                    onChange={setField('dateOfBirth')}
+                    max={new Date().toISOString().split('T')[0]}
+                    disabled={!isEditing || saving}
+                    style={{ borderRadius: 8, padding: '10px 14px' }}
+                  />
+                </div>
+
+                <div className="field">
+                  <label htmlFor="p-phone" style={{ fontWeight: 600, fontSize: 13 }}>Số điện thoại</label>
+                  <input
+                    id="p-phone"
+                    type="tel"
+                    value={form.phone}
+                    onChange={setField('phone')}
+                    placeholder="Ví dụ: 0912345678"
+                    disabled={!isEditing || saving}
+                    style={{ borderRadius: 8, padding: '10px 14px' }}
+                  />
+                </div>
+              </div>
+
+              <div className="field">
+                <label htmlFor="p-address" style={{ fontWeight: 600, fontSize: 13 }}>Địa chỉ liên hệ</label>
+                <textarea
+                  id="p-address"
+                  rows="3"
+                  value={form.address}
+                  onChange={setField('address')}
+                  placeholder="Nhập địa chỉ nhận tài liệu hoặc liên hệ..."
+                  disabled={!isEditing || saving}
+                  style={{ borderRadius: 8, padding: '10px 14px' }}
+                />
+              </div>
+
+              <div className="field" style={{ marginBottom: 20 }}>
+                <label htmlFor="p-email" style={{ fontWeight: 600, fontSize: 13 }}>Địa chỉ Email tài khoản</label>
+                <input
+                  id="p-email"
+                  value={profile?.email || user?.email || ''}
+                  readOnly
+                  disabled
+                  style={{ backgroundColor: 'var(--neo-paper-100)', cursor: 'not-allowed', borderRadius: 8, padding: '10px 14px' }}
+                />
+                <div className="field-hint" style={{ fontSize: 12, marginTop: 4 }}>
+                  Email được dùng để đăng nhập và nhận thông báo nhắc hạn. Quản lý tại mục{' '}
+                  <Link to="/account" style={{ color: 'var(--neo-cobalt-600)', fontWeight: 600 }}>
+                    Cài đặt tài khoản
+                  </Link>
+                  .
+                </div>
+              </div>
+
+              {isEditing && (
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', paddingTop: 14, borderTop: '1px solid var(--neo-border-paper)' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleCancel}
+                    disabled={saving}
+                  >
+                    Huỷ bỏ
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={saving}
+                  >
+                    {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+                  </button>
+                </div>
+              )}
+            </form>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // =========================================================================
+  // ADMIN MODE: KEEP ADMIN PROFILE UNCHANGED
+  // =========================================================================
   return (
     <div className="profile-page-container" style={{ maxWidth: 920, margin: '0 auto' }}>
       {/* Page Header */}
