@@ -610,11 +610,38 @@ export default function CirculationPage({ adminMode = false }) {
 
   return (
     <>
-      <div className="page-head">
-        <div>
-          <h1>{isLibrarian ? 'Quản lý lưu thông & mượn trả sách' : 'Mượn và trả sách'}</h1>
+      {!isLibrarian ? (
+        <section className="loans-neo-header-banner">
+          <div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 12px', borderRadius: 9999, background: 'rgba(255, 255, 255, 0.12)', color: '#93c5fd', fontSize: 11.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+              <CirculationIcon width={13} height={13} /> Sổ Lưu Thông & Mượn Trả Bạn Đọc
+            </div>
+            <h1 style={{ fontFamily: 'var(--neo-font-editorial)', fontSize: 32, fontWeight: 700, margin: '0 0 6px', color: '#ffffff' }}>
+              Mượn & Hoàn Trả Sách
+            </h1>
+            <p style={{ margin: 0, color: '#cbd5e1', fontSize: 14, maxWidth: 540 }}>
+              Theo dõi tình trạng các cuốn sách đang mượn, hạn ngạch khả dụng và lịch sử mượn trả tại thư viện.
+            </p>
+          </div>
+          <div className="loans-neo-quota-box">
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              Hạn mức bạn đọc
+            </div>
+            <div className="loans-neo-quota-val">
+              {String(totalActiveLoans).padStart(2, '0')} / 02
+            </div>
+            <div style={{ fontSize: 12, color: '#e2e8f0', marginTop: 4 }}>
+              {totalActiveLoans >= 2 ? 'Đã đạt hạn mức tối đa' : `Còn ${2 - totalActiveLoans} lượt mượn khả dụng`}
+            </div>
+          </div>
+        </section>
+      ) : (
+        <div className="page-head">
+          <div>
+            <h1>Quản lý lưu thông & mượn trả sách</h1>
+          </div>
         </div>
-      </div>
+      )}
 
       {notice && <Alert type="success" onClose={() => setNotice('')}>{notice}</Alert>}
       {error && (
@@ -1429,10 +1456,12 @@ export default function CirculationPage({ adminMode = false }) {
 
           {/* Section 1: Sách đang mượn (Tối đa 2 cuốn) */}
           <section>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <h2>Sách đang mượn ({activeLoans.length}/2 cuốn)</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h2 style={{ fontFamily: 'var(--neo-font-editorial)', fontSize: 24, fontWeight: 700, margin: 0, color: 'var(--neo-ink-950)' }}>
+                Sách đang mượn ({activeLoans.length}/2 cuốn)
+              </h2>
               {totalActiveLoans < 2 && (
-                <Link to="/catalog" className="btn btn-small btn-secondary">
+                <Link to="/catalog" className="btn btn-small btn-primary">
                   + Mượn thêm sách ({2 - totalActiveLoans} lượt khả dụng)
                 </Link>
               )}
@@ -1443,75 +1472,54 @@ export default function CirculationPage({ adminMode = false }) {
             ) : activeLoans.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {activeLoans.map((loan) => (
-                  <div
+                  <article
                     key={loan.id}
-                    className={`circulation-slip ${loan.overdue ? 'slip-danger' : 'slip-primary'}`}
+                    className={`neo-loan-card ${loan.overdue ? 'is-overdue' : ''}`}
+                    style={{ margin: 0 }}
                   >
-                    <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                      {renderCoverThumbnail(loan, 50)}
-                      <div className="slip-info">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                          <DueStamp dueDate={loan.dueDate} overdue={Boolean(loan.overdue)} />
-                          {loan.overdue && (
-                            <span className="badge badge-danger">
-                              <ClockIcon width={12} height={12} />
-                              Quá hạn {loan.overdueDays} ngày · Tiền phạt: {formatMoney(loan.penaltyAmount)}
-                            </span>
-                          )}
-                        </div>
-                        <div className="slip-book">{loan.bookTitle}</div>
-                        <div className="slip-meta">
-                          Ngày mượn: <span className="data">{formatDate(loan.borrowDate)}</span>
-                          <span style={{ marginLeft: 16 }}>
-                            Hạn hoàn trả (10 ngày): <span className="data" style={{ fontWeight: 600 }}>{formatDate(loan.dueDate)}</span>
+                    <div className="neo-loan-cover-wrap">
+                      {renderCoverThumbnail(loan, 68)}
+                    </div>
+                    <div className="neo-loan-meta">
+                      <div className="neo-loan-status-row">
+                        <DueStamp dueDate={loan.dueDate} overdue={Boolean(loan.overdue)} />
+                        {loan.overdue && (
+                          <span className="neo-status-pill overdue">
+                            <ClockIcon width={12} height={12} />
+                            Quá hạn {loan.overdueDays} ngày · Tiền phạt: {formatMoney(loan.penaltyAmount)}
                           </span>
-                        </div>
+                        )}
+                        <span style={{ fontSize: 12, color: 'var(--neo-text-light)' }}>Mã mượn #{loan.id}</span>
+                      </div>
+                      <h3 className="neo-loan-title">{loan.bookTitle}</h3>
+                      <div className="neo-loan-date-text">
+                        Mượn ngày {formatDate(loan.borrowDate)} · Hạn hoàn trả (10 ngày): <strong style={{ color: 'var(--neo-ink-900)' }}>{formatDate(loan.dueDate)}</strong>
                       </div>
                     </div>
-                    <button
-                      className="btn btn-secondary"
-                      onClick={() => setCustomerGuideRecord(loan)}
-                      type="button"
-                      title="Xem quy trình hoàn trả sách tại quầy thư viện"
-                    >
-                      Trả sách tại quầy
-                    </button>
-                  </div>
+                    <div className="neo-loan-due-box">
+                      <button
+                        className="btn btn-secondary"
+                        onClick={() => setCustomerGuideRecord(loan)}
+                        type="button"
+                        title="Xem quy trình hoàn trả sách tại quầy thư viện"
+                      >
+                        Trả sách tại quầy
+                      </button>
+                    </div>
+                  </article>
                 ))}
               </div>
             ) : (
-              <div
-                style={{
-                  padding: '24px',
-                  borderRadius: 'var(--radius-lg)',
-                  backgroundColor: 'var(--color-bg-surface)',
-                  border: '1px solid var(--color-border-default)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 16,
-                }}
-              >
-                <div
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 'var(--radius-full)',
-                    backgroundColor: 'var(--color-brand-surface)',
-                    color: 'var(--color-brand)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <BookIcon width={20} height={20} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--color-text-primary)' }}>
-                    Hiện tại bạn không mượn cuốn sách nào
+              <div className="neo-no-loan-banner">
+                <div className="neo-no-loan-info">
+                  <div className="neo-no-loan-icon">
+                    <BookIcon width={24} height={24} />
                   </div>
-                  <div style={{ fontSize: 13, color: 'var(--color-text-tertiary)', marginTop: 2 }}>
-                    Theo quy định, bạn có thể mượn tối đa 2 cuốn sách cùng lúc với thời hạn 10 ngày.
+                  <div>
+                    <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700 }}>Hiện tại bạn không mượn cuốn sách nào</h3>
+                    <p style={{ margin: 0, fontSize: 13.5, color: 'var(--neo-text-muted)' }}>
+                      Theo quy định của thư viện, bạn có thể mượn tối đa 2 cuốn sách cùng lúc với thời hạn 10 ngày.
+                    </p>
                   </div>
                 </div>
                 <Link to="/catalog" className="btn btn-primary">
@@ -1524,55 +1532,49 @@ export default function CirculationPage({ adminMode = false }) {
           {/* Section 2: Yêu cầu mượn đang chờ duyệt */}
           {pendingRequests.length > 0 && (
             <section>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-                <h2>Yêu cầu mượn đang chờ duyệt ({pendingRequests.length})</h2>
-                <span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
+                <h2 style={{ fontFamily: 'var(--neo-font-editorial)', fontSize: 22, fontWeight: 700, margin: 0, color: 'var(--neo-ink-950)' }}>
+                  Yêu cầu mượn đang chờ duyệt ({pendingRequests.length})
+                </h2>
+                <span style={{ fontSize: 13, color: 'var(--neo-text-muted)' }}>
                   Thời gian tiếp nhận & xử lý yêu cầu: <strong>1 – 3 ngày làm việc</strong>
                 </span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {pendingRequests.map((req) => (
-                  <div
+                  <article
                     key={req.id}
-                    style={{
-                      padding: '16px 20px',
-                      borderRadius: 'var(--radius-lg)',
-                      backgroundColor: 'var(--color-warn-bg)',
-                      border: '1px solid var(--color-warn-border)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 16,
-                    }}
+                    className="neo-loan-card"
+                    style={{ borderColor: 'var(--neo-amber-500)', background: 'var(--neo-amber-light)', margin: 0 }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                      {renderCoverThumbnail(req, 42)}
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--color-text-primary)' }}>
-                          {req.bookTitle}
-                        </div>
-                        <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginTop: 2 }}>
-                          Ngày gửi yêu cầu: <strong>{formatDate(req.borrowDate)}</strong> · Hạn trả mong muốn:{' '}
-                          <strong style={{ color: 'var(--color-brand)' }}>{formatDate(req.dueDate)}</strong>
-                        </div>
+                    <div className="neo-loan-cover-wrap">
+                      {renderCoverThumbnail(req, 60)}
+                    </div>
+                    <div className="neo-loan-meta">
+                      <div className="neo-loan-status-row">
+                        <span className="neo-status-pill pending">
+                          <ClockIcon width={12} height={12} />
+                          Đang chờ duyệt (1 – 3 ngày)
+                        </span>
+                        <span style={{ fontSize: 12, color: 'var(--neo-text-light)' }}>Mã #{req.id}</span>
+                      </div>
+                      <h3 className="neo-loan-title">{req.bookTitle}</h3>
+                      <div className="neo-loan-date-text">
+                        Ngày gửi: {formatDate(req.borrowDate)} · Hạn trả mong muốn: <strong style={{ color: 'var(--neo-cobalt-600)' }}>{formatDate(req.dueDate)}</strong>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <span className="badge badge-warn">
-                        <span className="badge-dot" />
-                        Đang chờ duyệt (1 – 3 ngày)
-                      </span>
+                    <div className="neo-loan-due-box">
                       <button
                         className="btn btn-small btn-secondary"
                         onClick={() => setConfirmAction({ type: 'CANCEL', record: req })}
                         disabled={busyId === req.id}
                         type="button"
-                        style={{ color: 'var(--color-danger-text)' }}
+                        style={{ color: 'var(--neo-coral-600)' }}
                       >
                         Huỷ yêu cầu
                       </button>
                     </div>
-                  </div>
+                  </article>
                 ))}
               </div>
             </section>

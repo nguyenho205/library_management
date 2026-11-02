@@ -52,7 +52,7 @@ export default function Layout({ mode = 'customer' }) {
   const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : 'U'
 
   // =========================================================================
-  // 1. CUSTOMER PORTAL LAYOUT: TOP NAVBAR (KEPT INTACT AS REQUESTED)
+  // 1. CUSTOMER PORTAL LAYOUT: TOP NAVBAR & NEO-EDITORIAL FOUNDATION
   // =========================================================================
   if (!adminArea) {
     const homePath = '/'
@@ -71,8 +71,12 @@ export default function Layout({ mode = 'customer' }) {
 
         <header className="navbar">
           <div className="nav-left">
-            <Link className="brand" to={homePath} aria-label="Trang chủ Thư Viện">
-              <LibraryLogo width={200} height={50} />
+            <Link className="brand customer-brand-mark" to={homePath} aria-label="Trang chủ Thư Viện">
+              <LibraryLogo width={160} height={42} />
+              <div className="customer-brand-title">
+                <span>THƯ VIỆN SỐ</span>
+                <span className="customer-brand-subtitle">Athenaeum Reader</span>
+              </div>
             </Link>
 
             <nav className="navlinks" aria-label="Điều hướng chính">
@@ -106,17 +110,14 @@ export default function Layout({ mode = 'customer' }) {
           <div className="navuser">
             {user ? (
               <>
-                <Link to="/profile" className="user-badge user-badge-link" title="Xem và chỉnh sửa thông tin cá nhân">
-                  <span className="user-avatar">{userInitial}</span>
-                  <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, textAlign: 'left' }}>
-                    <span className="nav-email" style={{ fontWeight: 600 }}>{user?.fullName || user.email}</span>
-                    <span style={{ fontSize: 11, color: 'var(--color-brand)', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                      <UserIcon width={11} height={11} /> Thông tin cá nhân
+                <Link to="/profile" className="customer-user-chip" title="Xem thẻ bạn đọc & hồ sơ cá nhân">
+                  <span className="customer-avatar-badge">{userInitial}</span>
+                  <div className="customer-user-meta">
+                    <span className="customer-user-name">{user?.fullName || user.email}</span>
+                    <span className="customer-user-role">
+                      <UserIcon width={11} height={11} /> {isAdmin ? 'Thủ thư' : 'Bạn đọc'}
                     </span>
                   </div>
-                  <span className={`role-pill ${isAdmin ? 'admin' : ''}`}>
-                    {isAdmin ? 'Thủ thư' : 'Thành viên'}
-                  </span>
                 </Link>
                 {isAdmin && (
                   <Link to="/admin" className="btn btn-sm btn-secondary" title="Chuyển sang bảng điều khiển quản trị">
@@ -175,7 +176,7 @@ export default function Layout({ mode = 'customer' }) {
             {user && (
               <NavLink to="/profile" className={({ isActive }) => `navlink${isActive ? ' active' : ''}`}>
                 <UserIcon width={16} height={16} />
-                <span>Thông tin cá nhân</span>
+                <span>Thông tin cá nhân & Thẻ bạn đọc</span>
               </NavLink>
             )}
             {user && (
@@ -219,6 +220,40 @@ export default function Layout({ mode = 'customer' }) {
             <Outlet />
           </div>
         </main>
+
+        <footer className="customer-footer">
+          <div className="customer-footer-inner">
+            <div className="customer-footer-col">
+              <h4>Thư Viện Số · Athenaeum</h4>
+              <p>
+                Không gian lưu trữ và chia sẻ tri thức số hóa dành cho bạn đọc, giảng viên và các nhà nghiên cứu. Khám phá kho tàng tài liệu phong phú từ khoa học kỹ thuật, kinh tế đến văn học kinh điển.
+              </p>
+              <div className="customer-footer-quote">
+                “Một cuốn sách hay là tấm vé thông hành đưa ta chu du qua muôn vàn cuộc đời và chân trời tri thức.”
+              </div>
+            </div>
+            <div className="customer-footer-col">
+              <h4>Thời gian phục vụ</h4>
+              <p style={{ fontSize: 13, lineHeight: 1.8 }}>
+                • <strong>Thứ 2 – Thứ 6:</strong> 07:30 – 21:00<br />
+                • <strong>Thứ 7 – Chủ Nhật:</strong> 08:00 – 17:30<br />
+                • <strong>Hỗ trợ trực tuyến:</strong> Phản hồi 24/7 qua email bạn đọc.
+              </p>
+            </div>
+            <div className="customer-footer-col">
+              <h4>Quy định bạn đọc</h4>
+              <p style={{ fontSize: 13, lineHeight: 1.8 }}>
+                • <strong>Hạn mức:</strong> Tối đa 02 cuốn / lượt.<br />
+                • <strong>Thời hạn mượn:</strong> 10 ngày / cuốn.<br />
+                • <strong>Gia hạn:</strong> Trực tiếp tại quầy lưu thông thư viện.
+              </p>
+            </div>
+          </div>
+          <div className="customer-footer-bottom">
+            <span>© 2026 Hệ thống Thư Viện Số Athenaeum. Bản quyền thuộc về Bạn đọc & Thủ thư.</span>
+            <span>Phiên bản số hóa Neo-Editorial v2.5</span>
+          </div>
+        </footer>
       </div>
     )
   }

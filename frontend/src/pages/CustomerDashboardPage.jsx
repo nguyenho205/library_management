@@ -319,171 +319,275 @@ export default function CustomerDashboardPage() {
 
   return (
     <div className="customer-home">
-      <section className="reader-hero">
-        <div className="reader-hero-copy">
-          <h1>Chào {firstName}, hôm nay bạn muốn đọc gì?</h1>
-          <p>Tìm một cuốn sách mới, theo dõi hạn trả và xem lại hành trình đọc của bạn tại thư viện.</p>
-          <div className="reader-hero-actions">
+      {/* 1. Hero Section: Neo-Editorial Digital Library */}
+      <section className="neo-hero">
+        <div className="neo-hero-content">
+          <div className="neo-hero-eyebrow">
+            <span className="neo-hero-eyebrow-dot" />
+            <span>Thư viện Số & Khám phá Tri thức</span>
+          </div>
+          <h1 className="neo-hero-title">
+            Chào {firstName}, <br />
+            <span className="neo-hero-title-accent">hôm nay bạn muốn đọc gì?</span>
+          </h1>
+          <p className="neo-hero-desc">
+            Khám phá kho tàng tài liệu học thuật, văn học kinh điển và công nghệ số. Đăng ký mượn tài liệu trực tuyến, theo dõi tiến trình đọc và mở rộng tư duy mỗi ngày.
+          </p>
+          <div className="neo-hero-actions">
             {can('BOOK_VIEW') && (
-              <Link to="/catalog" className="btn reader-primary-btn">
-                <SearchIcon width={16} height={16} /> Tra cứu sách
+              <Link to="/catalog" className="neo-btn-primary">
+                <SearchIcon width={16} height={16} /> Tra cứu danh mục sách
               </Link>
             )}
             {can('BORROW_USE') && (
-              <Link to="/my-loans" className="reader-secondary-link">
-                Mượn và trả sách <ChevronRightIcon width={15} height={15} />
+              <Link to="/my-loans" className="neo-btn-secondary">
+                <CirculationIcon width={16} height={16} /> Phiếu mượn ({totalActiveLoans}/2 cuốn)
               </Link>
             )}
           </div>
         </div>
-        <div className="reader-hero-art" aria-hidden="true">
-          <div className="reader-book reader-book-one"><span>NHỮNG TRANG<br />ĐANG CHỜ BẠN</span></div>
-          <div className="reader-book reader-book-two"><span>GÓC ĐỌC<br />CỦA RIÊNG MÌNH</span></div>
-          <div className="reader-book reader-book-three"><span>THƯ VIỆN<br />MỖI NGÀY</span></div>
-          <div className="reader-art-note"><BookIcon width={17} height={17} /> Một cuốn sách hay, một ngày khác đi</div>
+
+        {/* Floating 3D Book Showcase */}
+        <div className="neo-hero-showcase" aria-hidden="true">
+          <div className="neo-floating-book-stage">
+            <div className="neo-cover-item neo-cover-left">
+              <img src="/anhbia/tatden.jpg" alt="Tắt đèn" />
+            </div>
+            <div className="neo-cover-item neo-cover-center">
+              <img src="/anhbia/nhagiakim.jpg" alt="Nhà giả kim" />
+            </div>
+            <div className="neo-cover-item neo-cover-right">
+              <img src="/anhbia/CleanArchitecture.jpg" alt="Clean Architecture" />
+            </div>
+          </div>
+          <div className="neo-hero-badge">
+            <BookIcon width={15} height={15} />
+            <span>“Một cuốn sách hay, một ngày khác đi”</span>
+          </div>
         </div>
       </section>
 
       {notice && <Alert type="success" onClose={() => setNotice('')}>{notice}</Alert>}
       {error && <Alert type="error" onClose={() => setError('')}>{error}</Alert>}
 
-      <section className="reader-stats" aria-label="Tóm tắt hoạt động đọc">
+      {/* 2. Architectural Statistics Section */}
+      <section className="neo-stats-grid" aria-label="Thống kê hoạt động đọc">
         {can('BOOK_VIEW') && (
-          <article className="reader-stat">
-            <span className="reader-stat-label">Đầu sách trong thư viện</span>
-            <strong>{loading ? '…' : totalCatalogCount.toLocaleString('vi-VN')}</strong>
-            <span>Đang chờ bạn khám phá</span>
+          <article className="neo-stat-card neo-stat-card-dark">
+            <div className="neo-stat-header">
+              <span className="neo-stat-label">Kho lưu trữ số</span>
+              <div className="neo-stat-icon-wrap">
+                <BookIcon width={18} height={18} />
+              </div>
+            </div>
+            <div>
+              <div className="neo-stat-value">
+                {loading ? '…' : totalCatalogCount.toLocaleString('vi-VN')}
+              </div>
+              <div className="neo-stat-subtext">Đầu sách sẵn sàng cho bạn đọc</div>
+            </div>
           </article>
         )}
+
         {can('BORROW_USE') && (
-          <article className="reader-stat reader-stat-accent">
-            <span className="reader-stat-label">Đang mượn & Chờ duyệt</span>
-            <strong>{loading ? '…' : `${String(totalActiveLoans).padStart(2, '0')} / 02`}</strong>
-            <span>
-              {totalActiveLoans >= 2
-                ? 'Đã đạt tối đa 2 cuốn theo quy định'
-                : totalActiveLoans === 1
-                ? 'Còn 1 lượt mượn sách khả dụng'
-                : 'Mượn tối đa 2 cuốn / 1 lần'}
-            </span>
+          <article className="neo-stat-card">
+            <div className="neo-stat-header">
+              <span className="neo-stat-label">Hạn mức mượn</span>
+              <div className="neo-stat-icon-wrap" style={{ background: 'var(--neo-amber-light)', color: 'var(--neo-amber-600)' }}>
+                <CirculationIcon width={18} height={18} />
+              </div>
+            </div>
+            <div>
+              <div className="neo-stat-value" style={{ color: totalActiveLoans >= 2 ? 'var(--neo-coral-600)' : 'var(--neo-ink-950)' }}>
+                {loading ? '…' : `${String(totalActiveLoans).padStart(2, '0')} / 02`}
+              </div>
+              <div className="neo-stat-subtext">
+                {totalActiveLoans >= 2
+                  ? 'Đã đạt tối đa 2 cuốn theo quy định'
+                  : totalActiveLoans === 1
+                  ? 'Còn 1 lượt mượn sách khả dụng'
+                  : 'Mượn tối đa 2 cuốn / 1 lần'}
+              </div>
+              <div className="neo-quota-indicator">
+                <div className={`neo-quota-bar ${totalActiveLoans >= 1 ? 'filled' : 'available'}`} />
+                <div className={`neo-quota-bar ${totalActiveLoans >= 2 ? 'filled' : 'available'}`} />
+              </div>
+            </div>
           </article>
         )}
+
         {can('BOOK_VIEW') && (
-          <article className="reader-stat">
-            <span className="reader-stat-label">Có sẵn trong mục</span>
-            <strong>{loading ? '…' : availableCount.toLocaleString('vi-VN')}</strong>
-            <span>Cuốn sách sẵn sàng cho mượn</span>
+          <article className="neo-stat-card">
+            <div className="neo-stat-header">
+              <span className="neo-stat-label">Sẵn sàng phục vụ</span>
+              <div className="neo-stat-icon-wrap" style={{ background: 'var(--neo-emerald-light)', color: 'var(--neo-emerald-600)' }}>
+                <ClockIcon width={18} height={18} />
+              </div>
+            </div>
+            <div>
+              <div className="neo-stat-value" style={{ color: 'var(--neo-emerald-600)' }}>
+                {loading ? '…' : availableCount.toLocaleString('vi-VN')}
+              </div>
+              <div className="neo-stat-subtext">
+                <span className="neo-stock-dot" /> Cuốn sách khả dụng trong mục
+              </div>
+            </div>
           </article>
         )}
       </section>
 
+      {/* 3. Current Loans Section */}
       {can('BORROW_USE') && (
-        <section className="reader-loan-section">
-          <div className="reader-section-heading">
+        <section style={{ marginBottom: 44 }}>
+          <div className="neo-section-title-wrap">
             <div>
-              <h2>
+              <h2 className="neo-section-title">
                 {activeLoans.length > 0
-                  ? `Sách đang mượn (${activeLoans.length}/2 cuốn)`
+                  ? `Sách đang mượn`
                   : pendingLoans.length > 0
-                  ? `Yêu cầu mượn chờ duyệt (${pendingLoans.length})`
+                  ? `Yêu cầu mượn chờ duyệt`
                   : 'Sách đang mượn'}
+                <span className="neo-section-badge">
+                  {activeLoans.length > 0
+                    ? `${activeLoans.length}/2 cuốn`
+                    : pendingLoans.length > 0
+                    ? `${pendingLoans.length} yêu cầu`
+                    : '0 cuốn'}
+                </span>
               </h2>
             </div>
-            <Link to="/my-loans" className="reader-text-link">Xem tất cả <ChevronRightIcon width={15} height={15} /></Link>
+            <Link to="/my-loans" className="neo-section-link">
+              Quản lý tất cả phiếu mượn <ChevronRightIcon width={15} height={15} />
+            </Link>
           </div>
+
           {loading ? (
             <Skeleton rows={2} />
           ) : activeLoans.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div>
               {activeLoans.map((loan) => (
-                <article key={loan.id} className={`reader-current-loan ${overdue(loan) ? 'is-overdue' : ''}`}>
-                  <div className="reader-loan-mark"><CirculationIcon width={23} height={23} /></div>
-                  <div className="reader-loan-copy">
-                    <span className={`badge ${overdue(loan) ? 'badge-danger' : 'badge-warn'}`}>
-                      {overdue(loan)
-                        ? `Quá hạn ${loan.overdueDays || 1} ngày`
-                        : 'Đang đọc'}
-                    </span>
-                    <h3>{loan.bookTitle}</h3>
-                    <p>
+                <article key={loan.id} className={`neo-loan-card ${overdue(loan) ? 'is-overdue' : ''}`}>
+                  <div className="neo-loan-cover-wrap">
+                    {loan.bookImgUrl || getBookCover({ title: loan.bookTitle }) ? (
+                      <img src={loan.bookImgUrl || getBookCover({ title: loan.bookTitle })} alt={loan.bookTitle} />
+                    ) : (
+                      <div style={{ display: 'grid', placeItems: 'center', height: '100%', color: '#94a3b8' }}>
+                        <BookIcon width={24} height={24} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="neo-loan-meta">
+                    <div className="neo-loan-status-row">
+                      <span className={`neo-status-pill ${overdue(loan) ? 'overdue' : 'reading'}`}>
+                        <span className="neo-stock-dot" style={{ background: overdue(loan) ? 'var(--neo-coral-600)' : 'var(--neo-cobalt-600)' }} />
+                        {overdue(loan) ? `Quá hạn ${loan.overdueDays || 1} ngày` : 'Đang mượn'}
+                      </span>
+                      <span style={{ fontSize: 12, color: 'var(--neo-text-light)' }}>Mã phiếu #{loan.id}</span>
+                    </div>
+                    <h3 className="neo-loan-title">{loan.bookTitle}</h3>
+                    <div className="neo-loan-date-text">
                       Mượn ngày {formatDate(loan.borrowDate)}
                       {overdue(loan) && loan.penaltyAmount && Number(loan.penaltyAmount) > 0 && (
-                        <span style={{ color: 'var(--color-danger-text)', fontWeight: 600, marginLeft: 8 }}>
-                          · Phí phạt: {Number(loan.penaltyAmount).toLocaleString('vi-VN')} đ
+                        <span style={{ color: 'var(--neo-coral-600)', fontWeight: 700, marginLeft: 10 }}>
+                          · Phí phạt trễ: {Number(loan.penaltyAmount).toLocaleString('vi-VN')} đ
                         </span>
                       )}
-                    </p>
+                    </div>
                   </div>
-                  <div className="reader-due-date">
-                    <span><ClockIcon width={15} height={15} /> Hạn trả (10 ngày)</span>
-                    <strong>{formatDate(loan.dueDate)}</strong>
+                  <div className="neo-loan-due-box">
+                    <div className="neo-loan-due-text">
+                      <span className="neo-loan-due-label">Hạn hoàn trả (10 ngày)</span>
+                      <span className="neo-loan-due-val">{formatDate(loan.dueDate)}</span>
+                    </div>
+                    <Link to="/my-loans" className="btn btn-sm btn-secondary">
+                      Xem phiếu mượn
+                    </Link>
                   </div>
-                  <Link to="/my-loans" className="btn btn-secondary btn-sm">Xem phiếu mượn</Link>
                 </article>
               ))}
             </div>
           ) : pendingLoans.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div>
               {pendingLoans.map((pending) => (
-                <article
-                  key={pending.id}
-                  className="reader-current-loan"
-                  style={{
-                    borderColor: 'var(--color-warn-border)',
-                    backgroundColor: 'var(--color-warn-bg)',
-                  }}
-                >
-                  <div className="reader-loan-mark" style={{ color: 'var(--color-warn)' }}>
-                    <ClockIcon width={23} height={23} />
+                <article key={pending.id} className="neo-loan-card" style={{ borderColor: 'var(--neo-amber-500)', background: 'var(--neo-amber-light)' }}>
+                  <div className="neo-loan-cover-wrap">
+                    {pending.bookImgUrl || getBookCover({ title: pending.bookTitle }) ? (
+                      <img src={pending.bookImgUrl || getBookCover({ title: pending.bookTitle })} alt={pending.bookTitle} />
+                    ) : (
+                      <div style={{ display: 'grid', placeItems: 'center', height: '100%', color: '#94a3b8' }}>
+                        <BookIcon width={24} height={24} />
+                      </div>
+                    )}
                   </div>
-                  <div className="reader-loan-copy">
-                    <span className="badge badge-warn">
-                      <span className="badge-dot" />
-                      Đang chờ duyệt (1 – 3 ngày)
-                    </span>
-                    <h3>{pending.bookTitle}</h3>
-                    <p>
-                      Đã gửi ngày {formatDate(pending.borrowDate)} · Hạn trả mong muốn:{' '}
-                      <strong style={{ color: 'var(--color-brand)' }}>{formatDate(pending.dueDate)}</strong>
-                    </p>
+                  <div className="neo-loan-meta">
+                    <div className="neo-loan-status-row">
+                      <span className="neo-status-pill pending">
+                        <span className="neo-stock-dot" style={{ background: 'var(--neo-amber-500)' }} />
+                        Đang chờ thủ thư duyệt (1 – 3 ngày)
+                      </span>
+                    </div>
+                    <h3 className="neo-loan-title">{pending.bookTitle}</h3>
+                    <div className="neo-loan-date-text">
+                      Đã gửi ngày {formatDate(pending.borrowDate)} · Hạn trả mong muốn: <strong style={{ color: 'var(--neo-cobalt-600)' }}>{formatDate(pending.dueDate)}</strong>
+                    </div>
                   </div>
-                  <div className="reader-due-date">
-                    <span><ClockIcon width={15} height={15} /> Dự kiến trả</span>
-                    <strong>{formatDate(pending.dueDate)}</strong>
+                  <div className="neo-loan-due-box">
+                    <div className="neo-loan-due-text">
+                      <span className="neo-loan-due-label">Dự kiến trả</span>
+                      <span className="neo-loan-due-val">{formatDate(pending.dueDate)}</span>
+                    </div>
+                    <Link to="/my-loans" className="btn btn-sm btn-secondary">
+                      Xem phiếu
+                    </Link>
                   </div>
-                  <Link to="/my-loans" className="btn btn-secondary btn-sm">Xem phiếu</Link>
                 </article>
               ))}
             </div>
           ) : (
-            <article className="reader-no-loan">
-              <div className="reader-loan-mark"><BookIcon width={23} height={23} /></div>
-              <div>
-                <h3>Bạn chưa có sách đang mượn</h3>
-                <p>Chọn một cuốn sách còn trên kệ để bắt đầu lượt đọc tiếp theo.</p>
+            <div className="neo-no-loan-banner">
+              <div className="neo-no-loan-info">
+                <div className="neo-no-loan-icon">
+                  <BookIcon width={24} height={24} />
+                </div>
+                <div>
+                  <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700 }}>Bạn chưa có sách đang mượn</h3>
+                  <p style={{ margin: 0, fontSize: 13.5, color: 'var(--neo-text-muted)' }}>
+                    Chọn một cuốn sách còn trên kệ để bắt đầu lượt đọc mới. Hạn mức mượn tối đa 2 cuốn trong 10 ngày.
+                  </p>
+                </div>
               </div>
-              {can('BOOK_VIEW') && <Link to="/catalog" className="btn btn-primary btn-sm">Tìm sách</Link>}
-            </article>
+              {can('BOOK_VIEW') && (
+                <Link to="/catalog" className="btn btn-primary btn-sm">
+                  Tìm sách ngay
+                </Link>
+              )}
+            </div>
           )}
         </section>
       )}
 
+      {/* 4. Book Recommendations Showcase */}
       {can('BOOK_VIEW') && (
-        <section className="reader-discover-section">
-          <div className="reader-section-heading">
+        <section style={{ marginBottom: 44 }}>
+          <div className="neo-section-title-wrap">
             <div>
-              <h2>Sách gợi ý hôm nay</h2>
+              <h2 className="neo-section-title">
+                Sách gợi ý hôm nay
+                <span className="neo-section-badge">Tuyển chọn</span>
+              </h2>
             </div>
-            <Link to="/catalog" className="reader-text-link">Xem toàn bộ danh mục <ChevronRightIcon width={15} height={15} /></Link>
+            <Link to="/catalog" className="neo-section-link">
+              Xem toàn bộ danh mục <ChevronRightIcon width={15} height={15} />
+            </Link>
           </div>
 
-          {/* 3 Tabs lua chon goi y */}
-          <div className="recommendation-tabs-nav" role="tablist" aria-label="Phân loại gợi ý">
+          {/* 3 Tabs with Pill Design */}
+          <div className="neo-tabs-bar" role="tablist" aria-label="Phân loại gợi ý">
             <button
               type="button"
               role="tab"
               aria-selected={activeTab === 'CATEGORY'}
-              className={`recommendation-tab-btn ${activeTab === 'CATEGORY' ? 'is-active' : ''}`}
+              className={`neo-tab-btn ${activeTab === 'CATEGORY' ? 'is-active' : ''}`}
               onClick={() => setActiveTab('CATEGORY')}
             >
               Thể loại yêu thích
@@ -492,7 +596,7 @@ export default function CustomerDashboardPage() {
               type="button"
               role="tab"
               aria-selected={activeTab === 'AUTHOR'}
-              className={`recommendation-tab-btn ${activeTab === 'AUTHOR' ? 'is-active' : ''}`}
+              className={`neo-tab-btn ${activeTab === 'AUTHOR' ? 'is-active' : ''}`}
               onClick={() => setActiveTab('AUTHOR')}
             >
               Tác giả thường theo dõi
@@ -501,7 +605,7 @@ export default function CustomerDashboardPage() {
               type="button"
               role="tab"
               aria-selected={activeTab === 'POPULAR'}
-              className={`recommendation-tab-btn ${activeTab === 'POPULAR' ? 'is-active' : ''}`}
+              className={`neo-tab-btn ${activeTab === 'POPULAR' ? 'is-active' : ''}`}
               onClick={() => setActiveTab('POPULAR')}
             >
               Sách được yêu thích
@@ -511,14 +615,14 @@ export default function CustomerDashboardPage() {
           {loading ? (
             <Skeleton rows={4} />
           ) : currentBooks.length ? (
-            <div className="ecommerce-book-grid">
+            <div className="neo-books-grid">
               {currentBooks.map((book) => {
                 const coverUrl = getBookCover(book)
+                const isAvailable = book.quantityAvailable > 0
                 return (
-                  <article className="ecommerce-book-card" key={book.id}>
+                  <article className="neo-book-card" key={book.id}>
                     <div
-                      className="ecommerce-cover-frame"
-                      style={{ cursor: 'pointer' }}
+                      className="neo-book-cover-frame"
                       onClick={() => openBorrowModal(book)}
                       title={`Xem chi tiết tác phẩm ${book.title}`}
                     >
@@ -526,67 +630,77 @@ export default function CustomerDashboardPage() {
                         <img
                           src={coverUrl}
                           alt={book.title}
-                          className="ecommerce-cover-img"
+                          className="neo-book-cover-img"
                           loading="lazy"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none'
-                            const fallback = e.currentTarget.parentElement.querySelector('.ecommerce-cover-fallback')
+                            const fallback = e.currentTarget.parentElement.querySelector('.neo-book-cover-fallback')
                             if (fallback) fallback.style.display = 'flex'
                           }}
                         />
                       ) : null}
                       <div
-                        className="ecommerce-cover-fallback"
-                        style={{ display: coverUrl ? 'none' : 'flex' }}
+                        className="neo-book-cover-fallback"
+                        style={{
+                          display: coverUrl ? 'none' : 'flex',
+                          width: '100%',
+                          height: '100%',
+                          background: '#1e293b',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#94a3b8',
+                          gap: 8,
+                        }}
                       >
-                        <BookIcon width={34} height={34} />
-                        <span>{book.categoryName || 'THƯ VIỆN'}</span>
+                        <BookIcon width={32} height={32} />
+                        <span style={{ fontSize: 11, fontWeight: 700 }}>THƯ VIỆN</span>
                       </div>
-                      <span className="ecommerce-cat-pill">{book.categoryName || 'Chưa phân loại'}</span>
+                      <span className="neo-category-badge">{book.categoryName || 'Chưa phân loại'}</span>
                     </div>
 
-                    <div className="ecommerce-card-content">
+                    <div className="neo-book-body">
                       <h3
-                        className="ecommerce-book-title"
+                        className="neo-book-title"
                         title={book.title}
-                        style={{ cursor: 'pointer' }}
                         onClick={() => openBorrowModal(book)}
                       >
                         {book.title}
                       </h3>
-                      <p className="ecommerce-book-author" title={(book.authorNames || []).join(', ')}>
+                      <p className="neo-book-author" title={(book.authorNames || []).join(', ')}>
                         {(book.authorNames || []).join(', ') || 'Chưa cập nhật tác giả'}
                       </p>
 
-                      <div className="ecommerce-card-bottom">
-                        <span className={`stock-status ${book.quantityAvailable > 0 ? 'is-available' : 'is-empty'}`}>
-                          <span className="stock-dot" />
-                          {book.quantityAvailable > 0 ? `Còn ${book.quantityAvailable} cuốn` : 'Hết sách'}
+                      <div className="neo-book-footer">
+                        <span className="neo-stock-indicator">
+                          <span className={`neo-stock-dot ${isAvailable ? '' : 'empty'}`} />
+                          {isAvailable ? `Còn ${book.quantityAvailable} cuốn` : 'Hết sách'}
                         </span>
-                        {can('BORROW_USE') && book.quantityAvailable > 0 && (
+
+                        {can('BORROW_USE') && isAvailable && (
                           history.some((r) => (r.status === 'BORROWED' || r.status === 'PENDING') && r.bookId === book.id) ? (
                             <Link
                               to="/my-loans"
-                              className="btn btn-sm btn-secondary ecommerce-borrow-btn"
+                              className="neo-borrow-btn neo-borrow-btn-muted"
                               title="Bạn đang mượn hoặc đang chờ duyệt cuốn sách này."
                             >
-                              Đang giữ sách này
+                              Đang giữ sách
                             </Link>
                           ) : reachedBorrowLimit ? (
                             <Link
                               to="/my-loans"
-                              className="btn btn-sm btn-secondary ecommerce-borrow-btn"
+                              className="neo-borrow-btn neo-borrow-btn-muted"
                               title="Bạn đã đạt giới hạn tối đa 2 cuốn theo quy định thư viện."
                             >
-                              Đã đạt giới hạn (2/2)
+                              Hết lượt (2/2)
                             </Link>
                           ) : (
                             <button
-                              className="btn btn-sm btn-primary ecommerce-borrow-btn"
+                              className="neo-borrow-btn neo-borrow-btn-primary"
                               type="button"
                               onClick={() => openBorrowModal(book)}
                             >
-                              Mượn sách {totalActiveLoans === 1 ? '(Lượt 2/2)' : ''}
+                              Mượn sách {totalActiveLoans === 1 ? '(2/2)' : ''}
                             </button>
                           )
                         )}
@@ -597,7 +711,7 @@ export default function CustomerDashboardPage() {
               })}
             </div>
           ) : (
-            <div className="reader-empty-books">
+            <div style={{ padding: '36px', background: '#ffffff', borderRadius: '20px', border: '1px solid var(--neo-border-paper)', textAlign: 'center', color: 'var(--neo-text-muted)' }}>
               {activeTab === 'CATEGORY'
                 ? 'Chưa có sách phù hợp với thể loại bạn hay đọc. Bạn hãy khám phá thêm danh mục sách nhé.'
                 : activeTab === 'AUTHOR'
@@ -608,24 +722,42 @@ export default function CustomerDashboardPage() {
         </section>
       )}
 
+      {/* 5. Reading History Section */}
       {can('BORROW_USE') && recentLoans.length > 0 && (
-        <section className="reader-history-section">
-          <div className="reader-section-heading">
+        <section style={{ marginBottom: 44 }}>
+          <div className="neo-section-title-wrap">
             <div>
-              <h2>Sách mượn gần đây</h2>
+              <h2 className="neo-section-title">
+                Sách mượn gần đây
+                <span className="neo-section-badge">Hành trình đọc</span>
+              </h2>
             </div>
-            <Link to="/my-loans" className="reader-text-link">Mở lịch sử <ChevronRightIcon width={15} height={15} /></Link>
+            <Link to="/my-loans" className="neo-section-link">
+              Xem toàn bộ lịch sử <ChevronRightIcon width={15} height={15} />
+            </Link>
           </div>
-          <div className="reader-history-list">
-            {recentLoans.map((record) => (
-              <div className="reader-history-row" key={record.id}>
-                <span className="reader-history-icon"><BookIcon width={17} height={17} /></span>
-                <div><strong>{record.bookTitle}</strong><span>Mượn {formatDate(record.borrowDate)}</span></div>
-                <span className={`badge ${record.status === 'BORROWED' ? (overdue(record) ? 'badge-danger' : 'badge-warn') : 'badge-ok'}`}>
-                  {record.status === 'BORROWED' ? (overdue(record) ? 'Quá hạn' : 'Đang mượn') : 'Đã trả'}
-                </span>
-              </div>
-            ))}
+          <div className="neo-history-timeline">
+            {recentLoans.map((record) => {
+              const cover = record.bookImgUrl || getBookCover({ title: record.bookTitle })
+              return (
+                <div className="neo-history-item" key={record.id}>
+                  {cover ? (
+                    <img src={cover} alt={record.bookTitle} className="neo-history-thumb" />
+                  ) : (
+                    <div className="neo-history-thumb" style={{ background: '#1e293b', display: 'grid', placeItems: 'center', color: '#94a3b8' }}>
+                      <BookIcon width={18} height={18} />
+                    </div>
+                  )}
+                  <div className="neo-history-info">
+                    <h4>{record.bookTitle}</h4>
+                    <p>Mượn ngày {formatDate(record.borrowDate)} · Mã #{record.id}</p>
+                  </div>
+                  <span className={`badge ${record.status === 'BORROWED' ? (overdue(record) ? 'badge-danger' : 'badge-warn') : 'badge-ok'}`}>
+                    {record.status === 'BORROWED' ? (overdue(record) ? 'Quá hạn' : 'Đang mượn') : 'Đã hoàn trả'}
+                  </span>
+                </div>
+              )
+            })}
           </div>
         </section>
       )}

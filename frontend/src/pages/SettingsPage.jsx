@@ -14,11 +14,25 @@ export default function SettingsPage({ adminMode = false }) {
 
   return (
     <>
-      <div className="page-head">
-        <div>
-          <h1>{showConfig ? 'Cài đặt quản trị' : 'Tài khoản của tôi'}</h1>
+      {!adminMode ? (
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 12px', borderRadius: 9999, background: 'var(--neo-paper-100)', color: 'var(--neo-cobalt-600)', fontSize: 11.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+            <SettingsIcon width={13} height={13} /> Thiết Lập Tài Khoản
+          </div>
+          <h1 style={{ fontFamily: 'var(--neo-font-editorial)', fontSize: 32, fontWeight: 700, margin: '0 0 6px', color: 'var(--neo-ink-950)' }}>
+            Cài Đặt Tài Khoản & Bảo Mật
+          </h1>
+          <p style={{ margin: 0, color: 'var(--neo-text-muted)', fontSize: 14 }}>
+            Quản lý mật khẩu xác thực và cập nhật địa chỉ email nhận thông báo hạn trả sách.
+          </p>
         </div>
-      </div>
+      ) : (
+        <div className="page-head">
+          <div>
+            <h1>{showConfig ? 'Cài đặt quản trị' : 'Tài khoản của tôi'}</h1>
+          </div>
+        </div>
+      )}
 
       <div className="settings-grid">
         {showConfig && <MaintenanceSection />}

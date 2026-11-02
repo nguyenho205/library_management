@@ -1,0 +1,1534 @@
+/* ==========================================================================
+   NEO-EDITORIAL DIGITAL LIBRARY · CUSTOMER DESIGN SYSTEM
+   Aesthetics: Neo-Editorial, Immersive Library Depth, Tactile Book Covers,
+   Subtle Motion UI, and High-End Typography.
+   STRICTLY SCOPED TO CUSTOMER INTERFACES. 0 COLLISION WITH ADMIN.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Design Tokens & Root Variables for Customer Views
+   -------------------------------------------------------------------------- */
+:root {
+  --neo-font-editorial: 'Newsreader', 'Playfair Display', Georgia, Cambria, 'Times New Roman', serif;
+  --neo-font-display: 'Outfit', 'Plus Jakarta Sans', -apple-system, sans-serif;
+  --neo-font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Color Palette */
+  --neo-ink-950: #070d1e;
+  --neo-ink-900: #0b132b;
+  --neo-ink-850: #101c3d;
+  --neo-ink-800: #172554;
+  --neo-ink-700: #1e3a8a;
+
+  --neo-paper-50: #faf7f2;
+  --neo-paper-100: #f5f0e6;
+  --neo-paper-200: #ede4d5;
+  --neo-paper-300: #dfd2be;
+  --neo-paper-surface: #ffffff;
+
+  --neo-cobalt-600: #2563eb;
+  --neo-cobalt-700: #1d4ed8;
+  --neo-cobalt-500: #3b82f6;
+  --neo-cobalt-light: #eff6ff;
+
+  --neo-amber-500: #f59e0b;
+  --neo-amber-600: #d97706;
+  --neo-amber-light: #fffbeb;
+
+  --neo-coral-500: #f43f5e;
+  --neo-coral-600: #e11d48;
+
+  --neo-emerald-500: #10b981;
+  --neo-emerald-600: #059669;
+  --neo-emerald-light: #ecfdf5;
+
+  --neo-text-main: #0f172a;
+  --neo-text-muted: #475569;
+  --neo-text-light: #64748b;
+  --neo-text-paper: #f8fafc;
+
+  --neo-border-paper: rgba(15, 23, 42, 0.08);
+  --neo-border-paper-strong: rgba(15, 23, 42, 0.16);
+
+  /* Elevation & Book Depth Shadows */
+  --neo-shadow-book: 0 16px 32px -8px rgba(11, 19, 43, 0.28), 0 6px 14px -3px rgba(11, 19, 43, 0.16);
+  --neo-shadow-book-hover: 0 24px 48px -10px rgba(11, 19, 43, 0.36), 0 10px 20px -4px rgba(11, 19, 43, 0.2);
+  --neo-shadow-floating: 0 20px 40px -12px rgba(15, 23, 42, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.06);
+  --neo-shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06), 0 10px 24px -6px rgba(15, 23, 42, 0.08);
+}
+
+/* --------------------------------------------------------------------------
+   2. Motion Keyframes & Global Animations
+   -------------------------------------------------------------------------- */
+@keyframes neoFadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes neoFloatSlow {
+  0%, 100% {
+    transform: translateY(0) rotate(var(--rot, 0deg));
+  }
+  50% {
+    transform: translateY(-8px) rotate(var(--rot, 0deg));
+  }
+}
+
+@keyframes neoPulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(37, 99, 235, 0);
+  }
+}
+
+@keyframes neoShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3. Customer App Shell & Layout
+   -------------------------------------------------------------------------- */
+.app-shell-customer {
+  background-color: var(--neo-paper-50);
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.03) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(217, 119, 6, 0.03) 0px, transparent 50%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: var(--neo-text-main);
+  font-family: var(--neo-font-body);
+}
+
+.app-shell-customer .navbar {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  height: 70px;
+  background: rgba(250, 247, 242, 0.88);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--neo-border-paper);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  transition: all 0.25s ease;
+}
+
+.app-shell-customer .nav-left {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+}
+
+.app-shell-customer .brand {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  gap: 12px;
+}
+
+.customer-brand-mark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.customer-brand-title {
+  font-family: var(--neo-font-display);
+  font-weight: 800;
+  font-size: 19px;
+  letter-spacing: -0.02em;
+  color: var(--neo-ink-900);
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.customer-brand-subtitle {
+  font-family: var(--neo-font-body);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--neo-cobalt-600);
+  margin-top: 2px;
+}
+
+.app-shell-customer .navlinks {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-shell-customer .navlink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-family: var(--neo-font-body);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--neo-text-muted);
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.app-shell-customer .navlink:hover {
+  color: var(--neo-ink-900);
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.app-shell-customer .navlink.active {
+  color: var(--neo-ink-950);
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  font-weight: 700;
+}
+
+.app-shell-customer .navlink.active::after {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--neo-cobalt-600);
+  margin-left: 2px;
+}
+
+.app-shell-customer .navuser {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.customer-user-chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 14px 6px 6px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1px solid var(--neo-border-paper);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.customer-user-chip:hover {
+  border-color: var(--neo-cobalt-500);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+  transform: translateY(-1px);
+}
+
+.customer-avatar-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--neo-ink-900), var(--neo-cobalt-700));
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--neo-font-display);
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: 0 2px 6px rgba(11, 19, 43, 0.25);
+  border: 2px solid #ffffff;
+}
+
+.customer-user-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.customer-user-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--neo-ink-900);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.customer-user-role {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--neo-cobalt-600);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.app-shell-customer .main-content-wrap {
+  flex: 1;
+  padding: 32px 24px 64px;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  animation: neoFadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Customer Footer */
+.customer-footer {
+  margin-top: auto;
+  border-top: 1px solid var(--neo-border-paper);
+  background: #ffffff;
+  padding: 40px 24px 28px;
+  color: var(--neo-text-muted);
+}
+
+.customer-footer-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 36px;
+}
+
+.customer-footer-col h4 {
+  font-family: var(--neo-font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--neo-ink-900);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 14px;
+}
+
+.customer-footer-col p {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--neo-text-muted);
+  max-width: 440px;
+}
+
+.customer-footer-quote {
+  font-family: var(--neo-font-editorial);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--neo-ink-800);
+  margin-top: 12px;
+  line-height: 1.5;
+  border-left: 2px solid var(--neo-cobalt-600);
+  padding-left: 12px;
+}
+
+.customer-footer-bottom {
+  max-width: 1280px;
+  margin: 28px auto 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--neo-border-paper);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12.5px;
+  color: var(--neo-text-light);
+}
+
+/* --------------------------------------------------------------------------
+   4. Hero Section — Neo-Editorial Digital Library
+   -------------------------------------------------------------------------- */
+.neo-hero {
+  position: relative;
+  background: linear-gradient(135deg, var(--neo-ink-950) 0%, var(--neo-ink-900) 60%, var(--neo-ink-850) 100%);
+  border-radius: 28px;
+  padding: 56px 60px;
+  margin-bottom: 36px;
+  color: #ffffff;
+  overflow: hidden;
+  box-shadow: 0 24px 48px -12px rgba(11, 19, 43, 0.35);
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  align-items: center;
+  gap: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Ambient glow & decorative editorial pattern */
+.neo-hero::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -20%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.18) 0%, transparent 70%);
+  pointer-events: none;
+  filter: blur(40px);
+}
+
+.neo-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: 20%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(217, 119, 6, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+  filter: blur(50px);
+}
+
+.neo-hero-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.neo-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  font-family: var(--neo-font-display);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #93c5fd;
+}
+
+.neo-hero-eyebrow-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #60a5fa;
+  box-shadow: 0 0 10px #60a5fa;
+  animation: neoPulseGlow 2.5s infinite;
+}
+
+.neo-hero-title {
+  font-family: var(--neo-font-editorial);
+  font-size: 44px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  margin: 0;
+}
+
+.neo-hero-title-accent {
+  font-style: italic;
+  font-weight: 400;
+  color: #fde68a;
+  display: inline;
+}
+
+.neo-hero-desc {
+  font-size: 15.5px;
+  line-height: 1.65;
+  color: #cbd5e1;
+  max-width: 520px;
+  margin: 0;
+}
+
+.neo-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.neo-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 26px;
+  border-radius: 9999px;
+  background: #ffffff;
+  color: var(--neo-ink-950);
+  font-family: var(--neo-font-display);
+  font-weight: 700;
+  font-size: 14.5px;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  border: none;
+  cursor: pointer;
+}
+
+.neo-btn-primary:hover {
+  background: #f8fafc;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  color: var(--neo-cobalt-700);
+}
+
+.neo-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-family: var(--neo-font-display);
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.neo-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+}
+
+/* 3D Floating Book Showcase */
+.neo-hero-showcase {
+  position: relative;
+  height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.neo-floating-book-stage {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  height: 280px;
+  perspective: 1200px;
+}
+
+.neo-cover-item {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 160px;
+  height: 230px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--neo-shadow-book);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Book Spine tactile detail */
+.neo-cover-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 12px;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.5) 0%, rgba(255, 255, 255, 0.2) 20%, transparent 100%);
+  z-index: 4;
+}
+
+.neo-cover-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.neo-cover-left {
+  --rot: -12deg;
+  transform: translate(-110%, -50%) rotate(var(--rot)) scale(0.9);
+  z-index: 1;
+  animation: neoFloatSlow 6s ease-in-out infinite;
+}
+
+.neo-cover-center {
+  --rot: 0deg;
+  transform: translate(-50%, -50%) scale(1.05);
+  z-index: 3;
+  box-shadow: 0 28px 56px -10px rgba(0, 0, 0, 0.5);
+  animation: neoFloatSlow 7s ease-in-out infinite 0.5s;
+}
+
+.neo-cover-right {
+  --rot: 14deg;
+  transform: translate(10%, -50%) rotate(var(--rot)) scale(0.92);
+  z-index: 2;
+  animation: neoFloatSlow 8s ease-in-out infinite 1s;
+}
+
+.neo-cover-item:hover {
+  transform: translate(-50%, -60%) scale(1.12) !important;
+  z-index: 10;
+  box-shadow: 0 32px 64px -8px rgba(0, 0, 0, 0.6);
+}
+
+/* Pinned Quote Pill */
+.neo-hero-badge {
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  background: rgba(11, 19, 43, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 8px 16px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #f1f5f9;
+  z-index: 6;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   5. Architectural Stats Section
+   -------------------------------------------------------------------------- */
+.neo-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.neo-stat-card {
+  position: relative;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 28px 30px;
+  border: 1px solid var(--neo-border-paper);
+  box-shadow: var(--neo-shadow-card);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.neo-stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--neo-shadow-floating);
+  border-color: rgba(37, 99, 235, 0.2);
+}
+
+.neo-stat-card-dark {
+  background: linear-gradient(135deg, var(--neo-ink-900) 0%, var(--neo-ink-800) 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.neo-stat-card-dark .neo-stat-label {
+  color: #94a3b8;
+}
+
+.neo-stat-card-dark .neo-stat-subtext {
+  color: #cbd5e1;
+}
+
+.neo-stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.neo-stat-label {
+  font-family: var(--neo-font-display);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--neo-text-light);
+}
+
+.neo-stat-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--neo-paper-100);
+  color: var(--neo-cobalt-600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.neo-stat-card-dark .neo-stat-icon-wrap {
+  background: rgba(255, 255, 255, 0.1);
+  color: #60a5fa;
+}
+
+.neo-stat-value {
+  font-family: var(--neo-font-editorial);
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.neo-stat-subtext {
+  font-size: 13px;
+  color: var(--neo-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 2-Step Quota Progress Indicator */
+.neo-quota-indicator {
+  display: flex;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.neo-quota-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+  position: relative;
+}
+
+.neo-quota-bar.filled {
+  background: var(--neo-amber-500);
+}
+
+.neo-quota-bar.available {
+  background: var(--neo-emerald-500);
+}
+
+/* --------------------------------------------------------------------------
+   6. Active Loans Section
+   -------------------------------------------------------------------------- */
+.neo-section-title-wrap {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.neo-section-title {
+  font-family: var(--neo-font-editorial);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--neo-ink-950);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.neo-section-badge {
+  font-family: var(--neo-font-display);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: var(--neo-paper-200);
+  color: var(--neo-ink-900);
+}
+
+.neo-section-link {
+  font-family: var(--neo-font-display);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--neo-cobalt-600);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.neo-section-link:hover {
+  color: var(--neo-cobalt-700);
+  transform: translateX(3px);
+}
+
+/* Active Loan Card */
+.neo-loan-card {
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid var(--neo-border-paper);
+  box-shadow: var(--neo-shadow-card);
+  padding: 24px 28px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 28px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.neo-loan-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 5px;
+  background: var(--neo-cobalt-600);
+}
+
+.neo-loan-card.is-overdue::before {
+  background: var(--neo-coral-600);
+}
+
+.neo-loan-card.is-overdue {
+  border-color: rgba(225, 29, 72, 0.25);
+  background: #fffafa;
+}
+
+.neo-loan-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--neo-shadow-floating);
+}
+
+.neo-loan-cover-wrap {
+  width: 68px;
+  height: 96px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(11, 19, 43, 0.15);
+  background: #1e293b;
+  flex-shrink: 0;
+}
+
+.neo-loan-cover-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.neo-loan-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.neo-loan-status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.neo-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.neo-status-pill.reading {
+  background: #eff6ff;
+  color: var(--neo-cobalt-700);
+  border: 1px solid #bfdbfe;
+}
+
+.neo-status-pill.overdue {
+  background: #ffe4e6;
+  color: var(--neo-coral-600);
+  border: 1px solid #fecdd3;
+  animation: neoPulseGlow 2s infinite;
+}
+
+.neo-status-pill.pending {
+  background: #fffbeb;
+  color: var(--neo-amber-600);
+  border: 1px solid #fde68a;
+}
+
+.neo-loan-title {
+  font-family: var(--neo-font-editorial);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--neo-ink-950);
+  margin: 0;
+  line-height: 1.25;
+}
+
+.neo-loan-date-text {
+  font-size: 13.5px;
+  color: var(--neo-text-muted);
+}
+
+.neo-loan-due-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.neo-loan-due-text {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.neo-loan-due-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--neo-text-light);
+}
+
+.neo-loan-due-val {
+  font-family: var(--neo-font-display);
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--neo-ink-900);
+}
+
+/* Empty Loan State */
+.neo-no-loan-banner {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 32px 36px;
+  border: 1px dashed var(--neo-border-paper-strong);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.neo-no-loan-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.neo-no-loan-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--neo-paper-100);
+  color: var(--neo-cobalt-600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --------------------------------------------------------------------------
+   7. Curated Recommendations Showcase & Tabs
+   -------------------------------------------------------------------------- */
+.neo-tabs-bar {
+  display: inline-flex;
+  padding: 5px;
+  border-radius: 9999px;
+  background: var(--neo-paper-200);
+  gap: 4px;
+  margin-bottom: 24px;
+}
+
+.neo-tab-btn {
+  padding: 8px 20px;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  font-family: var(--neo-font-body);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--neo-text-muted);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.neo-tab-btn:hover {
+  color: var(--neo-ink-900);
+}
+
+.neo-tab-btn.is-active {
+  background: #ffffff;
+  color: var(--neo-ink-950);
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+/* Book Grid & Cards */
+.neo-books-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.neo-book-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 16px;
+  border: 1px solid var(--neo-border-paper);
+  box-shadow: var(--neo-shadow-card);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.neo-book-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--neo-shadow-floating);
+  border-color: rgba(37, 99, 235, 0.25);
+}
+
+.neo-book-cover-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4.2;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #0f172a;
+  box-shadow: var(--neo-shadow-book);
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+
+.neo-book-cover-frame::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 14px;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.4) 0%, rgba(255, 255, 255, 0.25) 25%, transparent 100%);
+  z-index: 3;
+}
+
+.neo-book-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.neo-book-card:hover .neo-book-cover-img {
+  transform: scale(1.04);
+}
+
+.neo-category-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: rgba(11, 19, 43, 0.78);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  z-index: 4;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.neo-book-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.neo-book-title {
+  font-family: var(--neo-font-editorial);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--neo-ink-950);
+  line-height: 1.3;
+  margin: 0 0 6px;
+  cursor: pointer;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  height: 44px;
+}
+
+.neo-book-title:hover {
+  color: var(--neo-cobalt-600);
+}
+
+.neo-book-author {
+  font-size: 13px;
+  color: var(--neo-text-muted);
+  margin: 0 0 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.neo-book-footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid var(--neo-border-paper);
+}
+
+.neo-stock-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--neo-text-muted);
+}
+
+.neo-stock-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--neo-emerald-500);
+}
+
+.neo-stock-dot.empty {
+  background: var(--neo-coral-500);
+}
+
+.neo-borrow-btn {
+  padding: 8px 14px;
+  border-radius: 9999px;
+  font-family: var(--neo-font-display);
+  font-size: 12.5px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.neo-borrow-btn-primary {
+  background: var(--neo-cobalt-600);
+  color: #ffffff;
+}
+
+.neo-borrow-btn-primary:hover {
+  background: var(--neo-cobalt-700);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.neo-borrow-btn-muted {
+  background: var(--neo-paper-100);
+  color: var(--neo-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   8. Reading History Timeline
+   -------------------------------------------------------------------------- */
+.neo-history-timeline {
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid var(--neo-border-paper);
+  box-shadow: var(--neo-shadow-card);
+  padding: 16px 24px;
+}
+
+.neo-history-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--neo-border-paper);
+}
+
+.neo-history-item:last-child {
+  border-bottom: none;
+}
+
+.neo-history-thumb {
+  width: 44px;
+  height: 60px;
+  border-radius: 6px;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.neo-history-info h4 {
+  font-family: var(--neo-font-editorial);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--neo-ink-950);
+  margin: 0 0 4px;
+}
+
+.neo-history-info p {
+  font-size: 12.5px;
+  color: var(--neo-text-muted);
+  margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   9. Book Catalog Page Styles (`/catalog`)
+   -------------------------------------------------------------------------- */
+.catalog-neo-hero {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 36px 40px;
+  margin-bottom: 32px;
+  border: 1px solid var(--neo-border-paper);
+  box-shadow: var(--neo-shadow-card);
+}
+
+.catalog-neo-hero-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.catalog-neo-hero-title {
+  font-family: var(--neo-font-editorial);
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--neo-ink-950);
+  margin: 0;
+}
+
+.catalog-neo-search-spotlight {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: var(--neo-paper-50);
+  border-radius: 9999px;
+  padding: 6px 8px 6px 20px;
+  border: 2px solid var(--neo-border-paper);
+  transition: all 0.25s ease;
+}
+
+.catalog-neo-search-spotlight:focus-within {
+  border-color: var(--neo-cobalt-600);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+}
+
+.catalog-neo-search-input {
+  border: none;
+  background: transparent;
+  font-family: var(--neo-font-body);
+  font-size: 14.5px;
+  color: var(--neo-ink-900);
+  flex: 1;
+  outline: none;
+}
+
+.catalog-neo-search-btn {
+  padding: 10px 22px;
+  border-radius: 9999px;
+  background: var(--neo-ink-900);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 13.5px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.catalog-neo-search-btn:hover {
+  background: var(--neo-cobalt-600);
+}
+
+.catalog-neo-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.catalog-neo-cat-pill {
+  padding: 6px 16px;
+  border-radius: 9999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  background: var(--neo-paper-100);
+  color: var(--neo-text-muted);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.catalog-neo-cat-pill:hover {
+  background: var(--neo-paper-200);
+  color: var(--neo-ink-950);
+}
+
+.catalog-neo-cat-pill.is-active {
+  background: var(--neo-cobalt-600);
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   10. My Loans Page Styles (`/my-loans`)
+   -------------------------------------------------------------------------- */
+.loans-neo-header-banner {
+  background: linear-gradient(135deg, var(--neo-ink-900), var(--neo-cobalt-800));
+  border-radius: 24px;
+  padding: 32px 36px;
+  color: #ffffff;
+  margin-bottom: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 16px 32px -8px rgba(11, 19, 43, 0.25);
+}
+
+.loans-neo-quota-box {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 16px 24px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  text-align: right;
+}
+
+.loans-neo-quota-val {
+  font-family: var(--neo-font-editorial);
+  font-size: 28px;
+  font-weight: 700;
+  color: #fde68a;
+}
+
+/* --------------------------------------------------------------------------
+   11. Profile Page Styles (`/profile`)
+   -------------------------------------------------------------------------- */
+.profile-neo-layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 32px;
+  margin-top: 24px;
+}
+
+/* Digital Reader Member Card */
+.profile-member-card {
+  background: linear-gradient(145deg, #0f172a, #1e293b);
+  border-radius: 24px;
+  padding: 28px;
+  color: #ffffff;
+  box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.35);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.profile-member-card::after {
+  content: '';
+  position: absolute;
+  top: -30%;
+  right: -30%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.2) 0%, transparent 70%);
+}
+
+.profile-card-chip {
+  width: 44px;
+  height: 32px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #d97706, #fde68a);
+  margin-bottom: 24px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.profile-card-id-text {
+  font-family: var(--neo-font-editorial);
+  font-size: 20px;
+  letter-spacing: 0.1em;
+  color: #f8fafc;
+  margin-bottom: 14px;
+}
+
+.profile-card-user-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding-top: 14px;
+}
+
+.profile-form-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 36px;
+  border: 1px solid var(--neo-border-paper);
+  box-shadow: var(--neo-shadow-card);
+}
+
+/* --------------------------------------------------------------------------
+   12. Authentication Screens Neo-Editorial Layout (`/login`, `/register`, etc.)
+   -------------------------------------------------------------------------- */
+.auth-neo-split-wrap {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  background: var(--neo-paper-50);
+}
+
+.auth-neo-art-side {
+  background: linear-gradient(135deg, var(--neo-ink-950) 0%, var(--neo-ink-900) 60%, var(--neo-ink-850) 100%);
+  color: #ffffff;
+  padding: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-neo-art-side::before {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: -20%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.2) 0%, transparent 70%);
+  filter: blur(50px);
+}
+
+.auth-neo-quote-box {
+  margin: auto 0;
+  position: relative;
+  z-index: 2;
+  max-width: 480px;
+}
+
+.auth-neo-quote-text {
+  font-family: var(--neo-font-editorial);
+  font-size: 32px;
+  font-style: italic;
+  line-height: 1.35;
+  color: #ffffff;
+  margin-bottom: 16px;
+}
+
+.auth-neo-quote-author {
+  font-family: var(--neo-font-display);
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #93c5fd;
+}
+
+.auth-neo-form-side {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+  background: #ffffff;
+}
+
+.auth-neo-form-box {
+  width: 100%;
+  max-width: 420px;
+}
+
+.auth-neo-form-title {
+  font-family: var(--neo-font-editorial);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--neo-ink-950);
+  margin: 0 0 8px;
+}
+
+.auth-neo-form-sub {
+  font-size: 14px;
+  color: var(--neo-text-muted);
+  margin-bottom: 28px;
+}
+
+/* --------------------------------------------------------------------------
+   13. Responsive Breakpoints
+   -------------------------------------------------------------------------- */
+@media (max-width: 1080px) {
+  .neo-hero {
+    grid-template-columns: 1fr;
+    padding: 40px 32px;
+    gap: 36px;
+  }
+  .neo-hero-showcase {
+    height: 240px;
+  }
+  .neo-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .neo-books-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .profile-neo-layout {
+    grid-template-columns: 1fr;
+  }
+  .auth-neo-split-wrap {
+    grid-template-columns: 1fr;
+  }
+  .auth-neo-art-side {
+    display: none;
+  }
+  .customer-footer-inner {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+@media (max-width: 640px) {
+  .neo-hero {
+    padding: 32px 20px;
+    border-radius: 20px;
+  }
+  .neo-hero-title {
+    font-size: 32px;
+  }
+  .neo-books-grid {
+    grid-template-columns: 1fr;
+  }
+  .neo-loan-card {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .neo-loan-due-box {
+    align-items: flex-start;
+  }
+}
+
