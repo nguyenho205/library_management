@@ -126,12 +126,14 @@ public class BookServiceImpl implements BookService {
             }
         }
 
-        List<Book> availableBooks = bookRepository.findAll().stream()
+        List<Book> circulationBooks = bookRepository.findAll().stream()
                 .filter(b -> b.getStatus() == BookStatus.IN_CIRCULATION)
-                .filter(b -> !currentlyBorrowedBookIds.contains(b.getId()))
                 .collect(Collectors.toList());
 
-        List<Book> scoredBooks = new ArrayList<>(availableBooks);
+        List<Book> scoredBooks = new ArrayList<>(circulationBooks.stream()
+                .filter(b -> "POPULAR".equals(activeTab) || "FALLBACK".equals(activeTab)
+                        || !currentlyBorrowedBookIds.contains(b.getId()))
+                .collect(Collectors.toList()));
 
         if ("CATEGORY".equals(activeTab)) {
             scoredBooks.sort((b1, b2) -> {
@@ -157,6 +159,7 @@ public class BookServiceImpl implements BookService {
             // POPULAR / FALLBACK
             Map<Long, Long> borrowCounts = borrowRecordRepository.findAll().stream()
                     .filter(r -> r.getBook() != null)
+                    .filter(r -> r.getStatus() == BorrowStatus.BORROWED || r.getStatus() == BorrowStatus.RETURNED)
                     .collect(Collectors.groupingBy(r -> r.getBook().getId(), Collectors.counting()));
 
             scoredBooks.sort((b1, b2) -> {
