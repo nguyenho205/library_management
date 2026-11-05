@@ -2,25 +2,27 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { authApi } from '../api/auth'
 import { readError } from '../api/errors'
-import { LibraryLogo, CheckCircleIcon } from '../components/Icons'
+import { MailIcon, LockIcon, BookIcon, UserIcon, CheckCircleIcon, ChevronRightIcon } from '../components/Icons'
 import Alert from '../components/Alert'
 import PasswordInput from '../components/PasswordInput'
+import '../styles/login-page.css'
 
 export default function RegisterPage() {
   const [form, setForm] = useState({ fullName: '', email: '', password: '', confirmPassword: '' })
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
-  const [stage, setStage] = useState('register') // 'register' | 'verify' | 'verified'
+  const [stage, setStage] = useState('register')
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
 
-  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
+  const set = (key) => (event) => setForm((current) => ({ ...current, [key]: event.target.value }))
 
-  const submit = async (e) => {
-    e.preventDefault()
+  const submit = async (event) => {
+    event.preventDefault()
     setError('')
+    setNotice('')
     if (form.password !== form.confirmPassword) {
-      setError('Mật khẩu xác nhận không khớp.')
+      setError('The passwords do not match.')
       return
     }
     setBusy(true)
@@ -34,13 +36,14 @@ export default function RegisterPage() {
     }
   }
 
-  const verify = async (e) => {
-    e.preventDefault()
+  const verify = async (event) => {
+    event.preventDefault()
     setError('')
+    setNotice('')
     setBusy(true)
     try {
-      const res = await authApi.verifyEmail(form.email, code)
-      setNotice(res.message)
+      const response = await authApi.verifyEmail(form.email, code)
+      setNotice(response.message)
       setStage('verified')
     } catch (err) {
       setError(readError(err))
@@ -54,8 +57,8 @@ export default function RegisterPage() {
     setNotice('')
     setBusy(true)
     try {
-      const res = await authApi.resendVerification(form.email)
-      setNotice(res.message)
+      const response = await authApi.resendVerification(form.email)
+      setNotice(response.message)
       setStage('verify')
     } catch (err) {
       setError(readError(err))
@@ -64,198 +67,103 @@ export default function RegisterPage() {
     }
   }
 
+  const heading = stage === 'verified'
+    ? { eyebrow: 'Welcome to the library', title: 'You’re all set', copy: 'Your reader account is ready. Sign in and find your next favorite.' }
+    : stage === 'verify'
+      ? { eyebrow: 'One last step', title: 'Check your email', copy: <>Enter the six-digit code sent to <strong>{form.email}</strong>.</> }
+      : { eyebrow: 'Join the reading room', title: 'Create your account', copy: 'A world of books is waiting. Start your reading journey here.' }
+
   return (
-    <div className="auth-neo-split-wrap">
-      {/* Left Column: Atmospheric Library Visual & Editorial Quote */}
-      <div className="auth-neo-art-side" aria-hidden="true">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <LibraryLogo width={180} height={44} />
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', color: '#93c5fd', textTransform: 'uppercase' }}>
-            DIGITAL ARCHIVE
-          </span>
+    <main className="login-page register-page">
+      <div className="login-page__backdrop" aria-hidden="true" />
+      <div className="login-page__shade" aria-hidden="true" />
+
+      <header className="login-navigation">
+        <Link className="login-navigation__brand" to="/login" aria-label="Library home">
+          <svg className="login-navigation__icon" width="48" height="40" viewBox="0 0 48 40" fill="none" aria-hidden="true">
+            <path d="M23.5 9.2C18.1 4.7 10.7 4.4 4 6.9v22.8c7-2.5 13.6-2 19.5 2.6V9.2Z" fill="#F0C98F" />
+            <path d="M24.5 9.2c5.4-4.5 12.8-4.8 19.5-2.3v22.8c-7-2.5-13.6-2-19.5 2.6V9.2Z" fill="#D7A45F" />
+            <path d="m4.5 33 19.5 3 19.5-3M24 9v27M10 12v12m6-13v13m16-13v13m6-12v12" stroke="#F7E6C9" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span>Library</span>
+        </Link>
+        <nav className="login-navigation__links" aria-label="Main navigation">
+          <Link to="/login">Books <span className="login-navigation__chevron">⌄</span></Link>
+          <a href="#register-hero">Our reading room</a>
+        </nav>
+        <div className="login-navigation__actions">
+          <Link className="login-navigation__login" to="/login">Login</Link>
+          <span className="login-navigation__signup" aria-current="page">Sign Up</span>
+        </div>
+      </header>
+
+      <section className="login-hero register-hero" id="register-hero" aria-labelledby="register-hero-title">
+        <div className="login-hero__copy">
+          <p className="login-hero__eyebrow">Read <i /> Learn <i /> Grow</p>
+          <h1 id="register-hero-title">A world of<br /><span>stories awaits</span></h1>
+          <p className="login-hero__description">Make room for new ideas, old favorites, and the books you haven’t discovered yet.</p>
+          <Link className="login-hero__explore" to="/login">Back to Sign In <ChevronRightIcon width={18} height={18} /></Link>
+          <div className="login-hero__note"><span className="login-hero__note-icon"><BookIcon width={17} height={17} /></span> Your next chapter starts here</div>
+        </div>
+        <div className="login-hero__prompt"><span className="login-hero__prompt-rule" /><span>Find your next favorite</span></div>
+      </section>
+
+      <footer className="login-page__footer"><span>Read · Learn · Grow</span><span>Find a little more wonder.</span></footer>
+
+      <section className="login-panel register-panel" role="region" aria-labelledby="register-panel-title">
+        <div className="login-panel__heading">
+          <span className="login-panel__mark">{stage === 'verified' ? <CheckCircleIcon width={19} height={19} /> : <BookIcon width={19} height={19} />}</span>
+          <p className="login-panel__eyebrow">{heading.eyebrow}</p>
+          <h2 id="register-panel-title">{heading.title}</h2>
+          <p className="login-panel__subheading">{heading.copy}</p>
         </div>
 
-        <div className="auth-neo-quote-box">
-          <div className="auth-neo-quote-text">
-            “Gia nhập cộng đồng bạn đọc Athenaeum: Kết nối với hàng ngàn tài liệu học thuật và văn học giá trị không giới hạn.”
+        {error && <Alert type="error">{error}</Alert>}
+        {notice && <Alert type="success">{notice}</Alert>}
+
+        {stage === 'verified' ? (
+          <div className="register-success">
+            <p>Your email has been verified. You can now sign in and explore the collection.</p>
+            <Link className="login-form__submit" to="/login">Continue to Sign In <ChevronRightIcon width={19} height={19} /></Link>
           </div>
-          <div className="auth-neo-quote-author">
-            — Đăng ký thẻ bạn đọc số Athenaeum
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255, 255, 255, 0.12)', paddingTop: 18, fontSize: 12.5, color: '#94a3b8' }}>
-          <span>© 2026 Thư Viện Số Athenaeum</span>
-          <span>Khám phá · Tích lũy · Khai phóng</span>
-        </div>
-      </div>
-
-      {/* Right Column: Clean Modern Form */}
-      <div className="auth-neo-form-side">
-        <div className="auth-neo-form-box">
-          <div style={{ marginBottom: 24 }}>
-            {stage === 'verified' ? (
-              <>
-                <h1 className="auth-neo-form-title">Xác thực thành công</h1>
-                <p className="auth-neo-form-sub">Tài khoản thành viên của bạn đã sẵn sàng sử dụng.</p>
-              </>
-            ) : stage === 'verify' ? (
-              <>
-                <h1 className="auth-neo-form-title">Nhập mã xác thực</h1>
-                <p className="auth-neo-form-sub">Mã 6 chữ số đã được gửi tới <strong>{form.email}</strong></p>
-              </>
-            ) : (
-              <>
-                <h1 className="auth-neo-form-title">Đăng ký bạn đọc</h1>
-                <p className="auth-neo-form-sub">Nhận thẻ thư viện số để tra cứu và mượn sách trực tuyến.</p>
-              </>
-            )}
-          </div>
-
-          {error && <Alert type="error">{error}</Alert>}
-          {notice && <Alert type="success">{notice}</Alert>}
-
-          {stage === 'verified' ? (
-            <div>
-              <div style={{ textAlign: 'center', margin: '28px 0', color: 'var(--neo-emerald-500)' }}>
-                <CheckCircleIcon width={56} height={56} />
-              </div>
-              <Link className="btn btn-primary btn-block" to="/login" style={{ padding: '11px 16px', borderRadius: 8 }}>
-                Tiến hành đăng nhập ngay
-              </Link>
+        ) : stage === 'verify' ? (
+          <form className="login-form" onSubmit={verify}>
+            <label className="login-form__field" htmlFor="register-code">
+              <span>Verification code</span>
+              <span className="login-form__input-wrap"><MailIcon width={18} height={18} /><input id="register-code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="Enter 6-digit code" required autoFocus /></span>
+            </label>
+            <p className="register-form__hint">The code is valid for 10 minutes.</p>
+            <button className="login-form__submit" type="submit" disabled={busy || code.length !== 6}>{busy ? 'Verifying…' : <>Verify email <ChevronRightIcon width={19} height={19} /></>}</button>
+            <button className="register-form__secondary" type="button" disabled={busy} onClick={resend}>{busy ? 'Sending…' : 'Resend verification code'}</button>
+            <button className="register-form__back" type="button" onClick={() => { setError(''); setNotice(''); setStage('register') }}>Back to account details</button>
+          </form>
+        ) : (
+          <form className="login-form register-form" onSubmit={submit}>
+            <label className="login-form__field" htmlFor="register-name">
+              <span>Full name</span>
+              <span className="login-form__input-wrap"><UserIcon width={18} height={18} /><input id="register-name" value={form.fullName} onChange={set('fullName')} placeholder="Your name" autoComplete="name" required autoFocus /></span>
+            </label>
+            <label className="login-form__field" htmlFor="register-email">
+              <span>Email address</span>
+              <span className="login-form__input-wrap"><MailIcon width={18} height={18} /><input id="register-email" type="email" value={form.email} onChange={set('email')} placeholder="you@example.com" autoComplete="email" required /></span>
+            </label>
+            <div className="login-form__field">
+              <span id="register-password-label">Password</span>
+              <span className="login-form__input-wrap"><LockIcon width={18} height={18} /><PasswordInput id="register-password" aria-labelledby="register-password-label" autoComplete="new-password" value={form.password} onChange={set('password')} placeholder="Create a password" required /></span>
             </div>
-          ) : stage === 'verify' ? (
-            <form onSubmit={verify}>
-              <div className="field">
-                <label htmlFor="verificationCode" style={{ fontWeight: 600, fontSize: 13 }}>Mã xác thực (6 chữ số)</label>
-                <input
-                  id="verificationCode"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  pattern="[0-9]{6}"
-                  maxLength={6}
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="123456"
-                  required
-                  autoFocus
-                  style={{ textAlign: 'center', letterSpacing: '0.25em', fontSize: '20px', fontWeight: 'bold', padding: '12px' }}
-                />
-                <div className="field-hint" style={{ fontSize: 12, marginTop: 4 }}>Mã có hiệu lực trong 10 phút kể từ lúc gửi.</div>
-              </div>
+            <p className="register-form__hint">Use at least 8 characters with uppercase, lowercase, a number, and a symbol.</p>
+            <div className="login-form__field">
+              <span id="register-confirm-label">Confirm password</span>
+              <span className="login-form__input-wrap"><LockIcon width={18} height={18} /><PasswordInput id="register-confirm" aria-labelledby="register-confirm-label" autoComplete="new-password" value={form.confirmPassword} onChange={set('confirmPassword')} placeholder="Enter your password again" required /></span>
+            </div>
+            <button className="login-form__submit" type="submit" disabled={busy}>{busy ? 'Creating account…' : <>Create Account <ChevronRightIcon width={19} height={19} /></>}</button>
+            <button className="register-form__secondary" type="button" disabled={busy || !form.email} onClick={() => { setError(''); setNotice(''); setStage('verify') }}>Already registered? Enter your code</button>
+          </form>
+        )}
 
-              <button
-                className="btn btn-primary btn-block"
-                disabled={busy || code.length !== 6}
-                type="submit"
-                style={{ marginTop: 12, padding: '11px 16px', borderRadius: 8 }}
-              >
-                {busy ? 'Đang xác thực...' : 'Xác thực tài khoản'}
-              </button>
-
-              <button
-                type="button"
-                className="btn btn-secondary btn-block"
-                disabled={busy}
-                onClick={resend}
-                style={{ marginTop: 8, padding: '10px 16px', borderRadius: 8 }}
-              >
-                {busy ? 'Đang gửi...' : 'Gửi lại mã xác thực'}
-              </button>
-
-              <div className="auth-switch" style={{ marginTop: 24, textAlign: 'center', fontSize: 13.5 }}>
-                Đã có tài khoản?{' '}
-                <Link to="/login" style={{ color: 'var(--neo-cobalt-600)', fontWeight: 700 }}>
-                  Đăng nhập
-                </Link>
-              </div>
-            </form>
-          ) : (
-            <form onSubmit={submit}>
-              <div className="field">
-                <label htmlFor="fullName" style={{ fontWeight: 600, fontSize: 13 }}>Họ và tên</label>
-                <input
-                  id="fullName"
-                  value={form.fullName}
-                  onChange={set('fullName')}
-                  placeholder="Nguyễn Văn A"
-                  required
-                  autoFocus
-                  style={{ borderRadius: 8, padding: '10px 14px' }}
-                />
-              </div>
-
-              <div className="field">
-                <label htmlFor="email" style={{ fontWeight: 600, fontSize: 13 }}>Email</label>
-                <input
-                  id="email"
-                  type="email"
-                  value={form.email}
-                  onChange={set('email')}
-                  placeholder="nguyenvana@example.com"
-                  required
-                  autoComplete="email"
-                  style={{ borderRadius: 8, padding: '10px 14px' }}
-                />
-              </div>
-
-              <div className="field">
-                <label htmlFor="password" style={{ fontWeight: 600, fontSize: 13 }}>Mật khẩu</label>
-                <PasswordInput
-                  id="password"
-                  autoComplete="new-password"
-                  value={form.password}
-                  onChange={set('password')}
-                  placeholder="Tối thiểu 8 ký tự"
-                  required
-                />
-                <div className="field-hint" style={{ fontSize: 12, marginTop: 4 }}>Gồm chữ hoa, chữ thường, số và ký tự đặc biệt.</div>
-              </div>
-
-              <div className="field">
-                <label htmlFor="confirmPassword" style={{ fontWeight: 600, fontSize: 13 }}>Xác nhận mật khẩu</label>
-                <PasswordInput
-                  id="confirmPassword"
-                  autoComplete="new-password"
-                  value={form.confirmPassword}
-                  onChange={set('confirmPassword')}
-                  placeholder="Nhập lại mật khẩu"
-                  required
-                />
-              </div>
-
-              <button
-                className="btn btn-primary btn-block"
-                disabled={busy}
-                type="submit"
-                style={{ marginTop: 12, padding: '11px 16px', borderRadius: 8, fontSize: 14 }}
-              >
-                {busy ? 'Đang gửi thông tin...' : 'Tạo thẻ bạn đọc'}
-              </button>
-
-              <button
-                type="button"
-                className="btn btn-ghost btn-block"
-                disabled={busy || !form.email}
-                onClick={() => {
-                  setError('')
-                  setStage('verify')
-                }}
-                style={{ marginTop: 8, fontSize: 13 }}
-              >
-                Đã đăng ký nhưng chưa nhập mã?
-              </button>
-
-              <div className="auth-switch" style={{ marginTop: 24, textAlign: 'center', fontSize: 13.5 }}>
-                Đã có thẻ thành viên?{' '}
-                <Link to="/login" style={{ color: 'var(--neo-cobalt-600)', fontWeight: 700 }}>
-                  Đăng nhập ngay
-                </Link>
-              </div>
-            </form>
-          )}
-        </div>
-      </div>
-    </div>
+        {stage !== 'verified' && <p className="login-panel__register">Already have an account? <Link to="/login">Sign in</Link></p>}
+        <p className="login-panel__privacy">Your reading journey is always yours.</p>
+      </section>
+    </main>
   )
 }
