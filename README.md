@@ -120,7 +120,7 @@ mvn test
 - Admin không tự đổi nhóm quyền của chính mình (tránh tự khoá). Đổi nhóm quyền có hiệu lực ngay ở backend;
   menu UI cập nhật sau khi người đó đăng nhập lại.
 
-## 6. Tự đánh giá mức độ hoàn thiện (đối chiếu nguyên văn đề bài)
+## 6. Tự đánh giá mức độ hoàn thiện
 
 **Đã đáp ứng đầy đủ:** toàn bộ chức năng + yêu cầu kỹ thuật liệt kê ở mục 4 phía trên.
 
