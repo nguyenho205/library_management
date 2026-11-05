@@ -951,7 +951,7 @@ export default function BooksPage({ adminMode = false }) {
                     Theo quy định của thư viện, mỗi bạn đọc được mượn <strong>tối đa 2 cuốn / 1 lần mượn</strong>. Hiện bạn đã có <strong>{totalActiveLoans} cuốn</strong> (đang mượn hoặc chờ duyệt). Vui lòng hoàn tất trả sách trước khi mượn tiếp.
                     <div style={{ marginTop: 6 }}>
                       <Link to="/my-loans" style={{ color: 'var(--color-brand)', fontWeight: 600 }}>
-                        Mở trang Mượn và trả sách để kiểm tra →
+                        Mở trang Mượn và trả sách để kiểm tra
                       </Link>
                     </div>
                   </div>

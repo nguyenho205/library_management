@@ -6,13 +6,21 @@ import RegisterPage from './pages/RegisterPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import EmailActionPage from './pages/EmailActionPage'
 import DashboardPage from './pages/DashboardPage'
-import CustomerDashboardPage from './pages/CustomerDashboardPage'
 import BooksPage from './pages/BooksPage'
 import MembersPage from './pages/MembersPage'
 import CirculationPage from './pages/CirculationPage'
 import SettingsPage from './pages/SettingsPage'
 import PermissionsPage from './pages/PermissionsPage'
 import ProfilePage from './pages/ProfilePage'
+
+// Customer Redesign — Immersive Reading Experience
+import CustomerLayout from './customer/CustomerLayout'
+import CustomerHomePage from './customer/CustomerHomePage'
+import CustomerCatalogPage from './customer/CustomerCatalogPage'
+import CustomerBookDetailPage from './customer/CustomerBookDetailPage'
+import CustomerLoansPage from './customer/CustomerLoansPage'
+import CustomerProfilePage from './customer/CustomerProfilePage'
+import CustomerSettingsPage from './customer/CustomerSettingsPage'
 
 export default function App() {
   return (
@@ -24,14 +32,17 @@ export default function App() {
       <Route path="/reset-password" element={<EmailActionPage />} />
       <Route path="/confirm-email-change" element={<EmailActionPage />} />
 
-      <Route element={<ProtectedRoute customerOnly><Layout mode="customer" /></ProtectedRoute>}>
-        <Route path="/" element={<CustomerDashboardPage />} />
-        <Route path="/catalog" element={<ProtectedRoute permission="BOOK_VIEW"><BooksPage /></ProtectedRoute>} />
-        <Route path="/my-loans" element={<ProtectedRoute permission="BORROW_USE"><CirculationPage /></ProtectedRoute>} />
-        <Route path="/account" element={<SettingsPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
+      {/* Customer Area — Immersive Reading Experience */}
+      <Route element={<ProtectedRoute customerOnly><CustomerLayout /></ProtectedRoute>}>
+        <Route path="/" element={<CustomerHomePage />} />
+        <Route path="/catalog/:bookId" element={<ProtectedRoute permission="BOOK_VIEW"><CustomerBookDetailPage /></ProtectedRoute>} />
+        <Route path="/catalog" element={<ProtectedRoute permission="BOOK_VIEW"><CustomerCatalogPage /></ProtectedRoute>} />
+        <Route path="/my-loans" element={<ProtectedRoute permission="BORROW_USE"><CustomerLoansPage /></ProtectedRoute>} />
+        <Route path="/account" element={<CustomerSettingsPage />} />
+        <Route path="/profile" element={<CustomerProfilePage />} />
       </Route>
 
+      {/* Admin Area — Untouched and preserved */}
       <Route path="/admin" element={<ProtectedRoute adminOnly><Layout mode="admin" /></ProtectedRoute>}>
         <Route index element={<DashboardPage />} />
         <Route path="books" element={<ProtectedRoute permission="BOOK_VIEW"><BooksPage adminMode /></ProtectedRoute>} />
