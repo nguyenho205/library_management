@@ -12,7 +12,6 @@ import com.fresher.library.repository.MemberRepository;
 import com.fresher.library.repository.PermissionGroupRepository;
 import com.fresher.library.repository.VerificationTokenRepository;
 import com.fresher.library.security.JwtTokenProvider;
-import com.fresher.library.security.SessionManagerService;
 import com.fresher.library.security.TokenBlacklistService;
 import com.fresher.library.service.AuthService;
 import com.fresher.library.service.EmailService;
@@ -48,7 +47,6 @@ public class AuthServiceImpl implements AuthService {
     private final TokenBlacklistService tokenBlacklistService;
     private final EmailService emailService;
     private final PermissionGroupRepository permissionGroupRepository;
-    private final SessionManagerService sessionManagerService;
 
     @Override
     @Transactional
@@ -169,14 +167,9 @@ public class AuthServiceImpl implements AuthService {
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
-
-        // Single Session Enforcement: Tao session moi khi dang nhap thanh cong, da moi phien cu ra
-        String sessionId = sessionManagerService.createSession(account.getEmail());
-        account.setSessionId(sessionId);
-        accountRepository.save(account);
-
-        String accessToken = jwtTokenProvider.generateAccessToken(account.getEmail(), account.getRole().name(), sessionId);
-        String refreshToken = jwtTokenProvider.generateRefreshToken(account.getEmail(), account.getRole().name(), sessionId);
+        // Independent tokens allow simultaneous sign-ins across tabs and devices.
+        String accessToken = jwtTokenProvider.generateAccessToken(account.getEmail(), account.getRole().name());
+        String refreshToken = jwtTokenProvider.generateRefreshToken(account.getEmail(), account.getRole().name());
 
         return JwtResponse.builder()
                 .accessToken(accessToken)
@@ -191,11 +184,6 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void logout(String accessToken) {
         tokenBlacklistService.blacklist(accessToken);
-        try {
-            String email = jwtTokenProvider.getEmailFromToken(accessToken);
-            sessionManagerService.invalidate(email);
-        } catch (Exception ignored) {
-        }
         log.info("Da logout va vo hieu hoa access token");
     }
 
@@ -218,20 +206,9 @@ public class AuthServiceImpl implements AuthService {
         if (!account.isEnabled()) {
             throw new UnauthorizedException("Tài khoản đã bị khoá hoặc vô hiệu hoá");
         }
-
-        // Kiem tra xem refresh token nay co thuoc ve session dang hoat dong hay khong
-        String tokenSessionId = jwtTokenProvider.getSessionId(refreshToken);
-        if (!sessionManagerService.isCurrentSession(account.getEmail(), tokenSessionId, account.getSessionId())) {
-            throw new UnauthorizedException("Tài khoản của bạn đã được đăng nhập ở một nơi khác. Vui lòng đăng nhập lại.");
-        }
-
-        // Refresh token con han -> tiep tuc phien hien tai
-        String sessionId = tokenSessionId != null ? tokenSessionId : sessionManagerService.createSession(account.getEmail());
-        account.setSessionId(sessionId);
-        accountRepository.save(account);
-
-        String newAccessToken = jwtTokenProvider.generateAccessToken(account.getEmail(), account.getRole().name(), sessionId);
-        String newRefreshToken = jwtTokenProvider.generateRefreshToken(account.getEmail(), account.getRole().name(), sessionId);
+        // Refresh tokens independently so one tab does not affect another.
+        String newAccessToken = jwtTokenProvider.generateAccessToken(account.getEmail(), account.getRole().name());
+        String newRefreshToken = jwtTokenProvider.generateRefreshToken(account.getEmail(), account.getRole().name());
 
         return JwtResponse.builder()
                 .accessToken(newAccessToken)
