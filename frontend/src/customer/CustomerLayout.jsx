@@ -15,6 +15,7 @@ import {
   CloseIcon,
   ClockIcon,
 } from '../components/Icons'
+import NotificationBell from '../components/NotificationBell'
 
 export default function CustomerLayout() {
   const { user, isAdmin, can, logout } = useAuth()
@@ -119,6 +120,7 @@ export default function CustomerLayout() {
 
           {/* User & Actions */}
           <div className="customer-nav-right">
+            {user && <NotificationBell />}
             {user ? (
               <div className="customer-user-menu-wrap">
                 <Link to="/profile" className="customer-profile-chip" title="Xem thẻ bạn đọc & thông tin cá nhân">

@@ -9,4 +9,5 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     Optional<Account> findByEmail(String email);
     boolean existsByEmail(String email);
     boolean existsByPermissionGroup_Id(Long groupId);
+    java.util.List<Account> findByRoleAndEnabledTrue(com.fresher.library.entity.Role role);
 }
