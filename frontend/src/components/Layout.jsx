@@ -17,6 +17,7 @@ import {
   ChevronRightIcon,
   UserIcon,
 } from './Icons'
+import NotificationBell from './NotificationBell'
 
 export default function Layout({ mode = 'customer' }) {
   const { user, isAdmin, can, logout } = useAuth()
@@ -110,6 +111,7 @@ export default function Layout({ mode = 'customer' }) {
           <div className="navuser">
             {user ? (
               <>
+                <NotificationBell />
                 <Link to="/profile" className="customer-user-chip" title="Xem thẻ bạn đọc & hồ sơ cá nhân">
                   <span className="customer-avatar-badge">{userInitial}</span>
                   <div className="customer-user-meta">

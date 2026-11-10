@@ -1,9 +1,12 @@
 import React from 'react'
-import { View, ActivityIndicator } from 'react-native'
+import { View, ActivityIndicator, AppState } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { useCallback, useEffect, useState } from 'react'
 import { colors } from '../constants/colors'
+import { notificationsApi } from '../api/notifications'
 import {
   DashboardIcon,
   BookIcon,
@@ -20,11 +23,27 @@ import CatalogScreen from '../screens/CatalogScreen'
 import BookDetailScreen from '../screens/BookDetailScreen'
 import MyLoansScreen from '../screens/MyLoansScreen'
 import ProfileScreen from '../screens/ProfileScreen'
+import NotificationsScreen from '../screens/NotificationsScreen'
 
 const Stack = createNativeStackNavigator()
 const Tab = createBottomTabNavigator()
 
 function MainTabs() {
+  const [unreadCount, setUnreadCount] = useState(0)
+  const refreshUnread = useCallback(() => notificationsApi.unreadCount().then(setUnreadCount).catch(() => {}), [])
+
+  useEffect(() => {
+    refreshUnread()
+    const interval = setInterval(refreshUnread, 20000)
+    const appState = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refreshUnread()
+    })
+    return () => {
+      clearInterval(interval)
+      appState.remove()
+    }
+  }, [refreshUnread])
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -56,6 +75,9 @@ function MainTabs() {
           if (route.name === 'Profile') {
             return <UserIcon size={18} color={color} />
           }
+          if (route.name === 'Notifications') {
+            return <MaterialCommunityIcons name="bell-outline" size={19} color={color} />
+          }
           return null
         },
       })}
@@ -63,6 +85,9 @@ function MainTabs() {
       <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: 'Trang chủ' }} />
       <Tab.Screen name="Catalog" component={CatalogScreen} options={{ tabBarLabel: 'Tra cứu' }} />
       <Tab.Screen name="MyLoans" component={MyLoansScreen} options={{ tabBarLabel: 'Mượn & trả' }} />
+      <Tab.Screen name="Notifications" options={{ tabBarLabel: 'Thông báo', tabBarBadge: unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount) : undefined, tabBarBadgeStyle: { backgroundColor: colors.danger, color: '#fff', fontSize: 9 } }}>
+        {(screenProps) => <NotificationsScreen {...screenProps} onUnreadChange={refreshUnread} />}
+      </Tab.Screen>
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: 'Tài khoản' }} />
     </Tab.Navigator>
   )

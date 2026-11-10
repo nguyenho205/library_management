@@ -19,6 +19,7 @@ import com.fresher.library.repository.BorrowRecordRepository;
 import com.fresher.library.repository.MemberRepository;
 import com.fresher.library.service.BorrowService;
 import com.fresher.library.service.EmailService;
+import com.fresher.library.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -55,6 +56,7 @@ public class BorrowServiceImpl implements BorrowService {
     private final MemberRepository memberRepository;
     private final AccountRepository accountRepository;
     private final EmailService emailService;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -112,6 +114,8 @@ public class BorrowServiceImpl implements BorrowService {
                 .build();
         record = borrowRecordRepository.save(record);
 
+        notificationService.borrowRequested(record);
+
         log.info("Member id={} gui yeu cau muon sach id={} ({}) voi han tra {}",
                 member.getId(), book.getId(), book.getTitle(), finalDueDate);
         return toResponse(record);
@@ -147,6 +151,7 @@ public class BorrowServiceImpl implements BorrowService {
         record.setDueDate(today.plusDays(DEFAULT_LOAN_PERIOD_DAYS));
 
         record = borrowRecordRepository.save(record);
+        notificationService.borrowApproved(record);
         log.info("Admin da duyet yeu cau mượn id={}, con lai {} cuon sach", record.getId(), book.getQuantityAvailable());
         return toResponse(record);
     }
@@ -163,6 +168,7 @@ public class BorrowServiceImpl implements BorrowService {
 
         record.setStatus(BorrowStatus.REJECTED);
         record = borrowRecordRepository.save(record);
+        notificationService.borrowRejected(record);
         log.info("Admin da tu choi yeu cau muon id={}", record.getId());
         return toResponse(record);
     }
@@ -184,6 +190,7 @@ public class BorrowServiceImpl implements BorrowService {
 
         record.setStatus(BorrowStatus.REJECTED);
         record = borrowRecordRepository.save(record);
+        notificationService.borrowCancelled(record);
         log.info("Member id={} da tu huy yeu cau muon id={}", member.getId(), record.getId());
         return toResponse(record);
     }
@@ -249,6 +256,8 @@ public class BorrowServiceImpl implements BorrowService {
             book.setQuantityAvailable(book.getQuantityAvailable() + 1);
             bookRepository.save(book);
         }
+
+        notificationService.bookReturned(record);
 
         log.info("Thu thu {} da kiem tra tinh trang {} va duyet tra sach id={} (record id={})",
                 actorEmail, condition, book.getId(), record.getId());
@@ -364,7 +373,7 @@ public class BorrowServiceImpl implements BorrowService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public BorrowRecordResponse sendDueReminder(Long borrowRecordId) {
         BorrowRecord record = borrowRecordRepository.findById(borrowRecordId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phiếu mượn với mã ID=" + borrowRecordId));
@@ -395,12 +404,13 @@ public class BorrowServiceImpl implements BorrowService {
         }
 
         emailService.sendDueReminderEmail(recipientEmail, memberName, bookTitle, dueDate, days, isOverdue);
+        notificationService.dueReminder(record, today);
         log.info("Đã gửi email nhắc nhở hạn trả sách recordId={} tới email={}", record.getId(), recipientEmail);
         return toResponse(record);
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public int sendDueRemindersBatch() {
         List<BorrowRecord> activeRecords = borrowRecordRepository.findByStatusWithDetails(BorrowStatus.BORROWED);
         LocalDate today = LocalDate.now();
@@ -415,6 +425,7 @@ public class BorrowServiceImpl implements BorrowService {
             boolean isDueSoon = due.isEqual(today.plusDays(1)) || due.isEqual(today.plusDays(2));
 
             if (isOverdue || isDueToday || isDueSoon) {
+                notificationService.dueReminder(r, today);
                 try {
                     String email = (r.getMember() != null && r.getMember().getAccount() != null)
                             ? r.getMember().getAccount().getEmail()
