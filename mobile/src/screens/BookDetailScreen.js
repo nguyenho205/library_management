@@ -13,9 +13,11 @@ import { Ionicons } from '../components/AppIcon'
 import { colors } from '../constants/colors'
 import { booksApi } from '../api/books'
 import { borrowApi } from '../api/borrow'
+import { ratingsApi } from '../api/ratings'
 import { readError } from '../api/client'
 import { resolveBookCover } from '../components/BookCard'
 import { Badge } from '../components/Badge'
+import BookRatingEditor from '../components/BookRatingEditor'
 
 function getFutureDate(days) {
   const d = new Date()
@@ -37,16 +39,18 @@ export default function BookDetailScreen({ route, navigation }) {
   const { bookId } = route.params
   const [book, setBook] = useState(null)
   const [userLoans, setUserLoans] = useState([])
+  const [ratingSummary, setRatingSummary] = useState(null)
   const [loading, setLoading] = useState(true)
   const [borrowing, setBorrowing] = useState(false)
   const [selectedDays, setSelectedDays] = useState(10)
   const [imageError, setImageError] = useState(false)
 
   useEffect(() => {
-    Promise.allSettled([booksApi.get(bookId), borrowApi.history()])
-      .then(([bookRes, loansRes]) => {
+    Promise.allSettled([booksApi.get(bookId), borrowApi.history(), ratingsApi.forBook(bookId)])
+      .then(([bookRes, loansRes, ratingsRes]) => {
         if (bookRes.status === 'fulfilled') setBook(bookRes.value)
         if (loansRes.status === 'fulfilled') setUserLoans(loansRes.value || [])
+        if (ratingsRes.status === 'fulfilled') setRatingSummary(ratingsRes.value)
       })
       .catch((err) => Alert.alert('Lỗi', readError(err)))
       .finally(() => setLoading(false))
@@ -83,6 +87,7 @@ export default function BookDetailScreen({ route, navigation }) {
   )
 
   const requestedDueDate = getFutureDate(selectedDays)
+  const returnedLoan = userLoans.find((loan) => String(loan.bookId) === String(bookId) && loan.status === 'RETURNED')
 
   const handleBorrowSubmit = async () => {
     if (reachedBorrowLimit) {
@@ -190,6 +195,29 @@ export default function BookDetailScreen({ route, navigation }) {
             {book.description ||
               'Tác phẩm hiện đang được bảo quản và phục vụ bạn đọc tại Thư viện. Vui lòng đăng ký mượn trực tuyến bên dưới để thủ thư chuẩn bị tài liệu trước khi bạn đến quầy lưu thông.'}
           </Text>
+        </View>
+
+        <View style={styles.sectionCard}>
+          <View style={styles.ratingHeading}>
+            <View><Text style={styles.sectionHeading}>ĐÁNH GIÁ & CẢM NHẬN</Text><Text style={styles.ratingSummaryText}>{Number(ratingSummary?.averageRating || 0).toFixed(1)} / 5  ·  {ratingSummary?.ratingCount || 0} đánh giá</Text></View>
+            <Text style={styles.ratingSummaryStars}>{'★'.repeat(Math.round(ratingSummary?.averageRating || 0))}{'☆'.repeat(5 - Math.round(ratingSummary?.averageRating || 0))}</Text>
+          </View>
+          {returnedLoan ? (
+            <BookRatingEditor
+              bookId={book.id}
+              borrowRecordId={returnedLoan.id}
+              existing={ratingSummary?.myScore ? { score: ratingSummary.myScore, comment: ratingSummary.myComment } : null}
+              onSaved={() => ratingsApi.forBook(bookId).then(setRatingSummary).catch(() => {})}
+            />
+          ) : <Text style={styles.ratingEligibility}>Bạn có thể đánh giá sau khi mượn và trả xong cuốn sách này.</Text>}
+          {(ratingSummary?.reviews || []).map((review) => (
+            <View key={review.id} style={styles.ratingReview}>
+              <View style={styles.ratingReviewHead}><Text style={styles.ratingReviewer}>{review.reviewerName || 'Bạn đọc'}</Text><Text style={styles.ratingReviewStars}>{'★'.repeat(review.score)}{'☆'.repeat(5 - review.score)}</Text></View>
+              {!!review.comment && <Text style={styles.ratingComment}>{review.comment}</Text>}
+              <Text style={styles.ratingDate}>{new Date(review.updatedAt || review.createdAt).toLocaleDateString('vi-VN')}</Text>
+            </View>
+          ))}
+          {!ratingSummary?.ratingCount && <Text style={styles.ratingEligibility}>Chưa có đánh giá. Hãy là người đầu tiên chia sẻ cảm nhận.</Text>}
         </View>
 
         {/* Borrow Workflow Box matching book-detail-borrow-card */}
@@ -433,6 +461,16 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     marginBottom: 8,
   },
+  ratingHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 8 },
+  ratingSummaryText: { marginTop: 4, fontSize: 11, color: colors.textTertiary },
+  ratingSummaryStars: { color: '#c08a36', fontSize: 13, letterSpacing: 1 },
+  ratingEligibility: { marginTop: 8, color: colors.textTertiary, fontSize: 11, lineHeight: 17 },
+  ratingReview: { paddingTop: 11, marginTop: 11, borderTopWidth: 1, borderTopColor: colors.borderSubtle },
+  ratingReviewHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  ratingReviewer: { fontSize: 12, fontWeight: '700', color: colors.textPrimary },
+  ratingReviewStars: { color: '#c08a36', fontSize: 11, letterSpacing: 1 },
+  ratingComment: { marginTop: 6, color: colors.textSecondary, fontSize: 11.5, lineHeight: 17 },
+  ratingDate: { marginTop: 4, color: colors.textTertiary, fontSize: 10 },
   descText: {
     fontSize: 13.5,
     color: colors.textSecondary,

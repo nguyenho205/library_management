@@ -24,5 +24,6 @@
     <include file="db/changelog/changes/017-add-session-id-to-account.xml" relativeToChangelogFile="false"/>
     <include file="db/changelog/changes/018-add-return-condition-to-borrow-record.xml" relativeToChangelogFile="false"/>
     <include file="db/changelog/changes/019-create-notification-table.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/020-create-book-rating-table.xml" relativeToChangelogFile="false"/>
 
 </databaseChangeLog>

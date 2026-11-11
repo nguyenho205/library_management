@@ -49,4 +49,5 @@ public interface BorrowRecordRepository extends JpaRepository<BorrowRecord, Long
     boolean existsByBook_Id(Long bookId);
 
     boolean existsByBook_IdAndStatus(Long bookId, BorrowStatus status);
+    Optional<BorrowRecord> findByIdAndMember_IdAndBook_IdAndStatus(Long id, Long memberId, Long bookId, BorrowStatus status);
 }
