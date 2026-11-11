@@ -150,3 +150,36 @@ Ngoài các điểm trên, không còn thiếu sót nào khác so với yêu c�
   luồng tự đăng ký `POST /api/auth/register` bắt buộc phải xác thực qua email).
 - Dùng `@Version` (optimistic locking) trên `Book.quantityAvailable` để tránh lệch tồn kho khi có
   nhiều request mượn sách cùng lúc.
+
+## 8. Chạy toàn bộ hệ thống bằng Docker
+
+Cần cài Docker Desktop hoặc Docker Engine kèm Docker Compose. Từ thư mục gốc của repository, tạo file cấu hình local:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Mở `.env` và đổi các mật khẩu database, mật khẩu admin, JWT secret. Sau đó khởi động MySQL, backend Spring Boot và web frontend:
+
+```bash
+docker compose up --build -d
+docker compose logs -f backend
+```
+
+Ứng dụng web chạy tại `http://localhost:5173`, API tại `http://localhost:8080` và Swagger tại `http://localhost:8080/swagger-ui.html`. Liquibase tự tạo/cập nhật schema khi backend kết nối MySQL lần đầu. Tài khoản admin ban đầu dùng email và mật khẩu trong `APP_DEFAULT_ADMIN_EMAIL` và `APP_DEFAULT_ADMIN_PASSWORD` của `.env`.
+
+MySQL lưu dữ liệu trong Docker volume `mysql_data`; ảnh bìa tải lên được giữ trong volume `book_covers`. Dừng các container bằng `docker compose down`; dữ liệu vẫn còn. `docker compose down -v` sẽ xóa cả database và các volume dữ liệu.
+
+Email nhắc hạn được tắt mặc định. Để bật, đặt `APP_MAIL_ENABLED=true` và điền thông tin SMTP vào `.env`.
+
+### Chạy app Expo trong Docker (tùy chọn)
+
+Đặt `DOCKER_HOST_IP` thành địa chỉ IPv4 LAN của máy chạy Docker và `EXPO_PUBLIC_API_URL` thành URL backend mà thiết bị mobile truy cập được. Điện thoại thật và máy tính cần cùng mạng Wi-Fi. Với Android Emulator, đặt `EXPO_PUBLIC_API_URL=http://10.0.2.2:8080/api`.
+
+Sau đó chạy:
+
+```bash
+docker compose --profile mobile-dev up --build
+```
+
+Expo Metro được mở ở cổng `8081`. Để dùng Expo Go trên điện thoại, cho phép các cổng `8081` và `8080` qua firewall của máy tính. Nếu chỉ cần backend và website, không cần bật profile `mobile-dev`.
