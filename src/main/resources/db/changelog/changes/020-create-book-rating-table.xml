@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/db.changelog-4.20.xsd">
+    <changeSet id="020-create-book-rating-table" author="codex">
+        <createTable tableName="book_rating">
+            <column name="id" type="BIGINT" autoIncrement="true"><constraints primaryKey="true" nullable="false" primaryKeyName="pk_book_rating"/></column>
+            <column name="member_id" type="BIGINT"><constraints nullable="false" foreignKeyName="fk_book_rating_member" references="member(id)" onDelete="CASCADE"/></column>
+            <column name="book_id" type="BIGINT"><constraints nullable="false" foreignKeyName="fk_book_rating_book" references="book(id)" onDelete="CASCADE"/></column>
+            <column name="borrow_record_id" type="BIGINT"><constraints nullable="false" foreignKeyName="fk_book_rating_borrow_record" references="borrow_record(id)"/></column>
+            <column name="score" type="INT"><constraints nullable="false"/></column>
+            <column name="comment" type="VARCHAR(1000)"/>
+            <column name="created_at" type="DATETIME" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+            <column name="updated_at" type="DATETIME" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="book_rating" columnNames="member_id, book_id" constraintName="uk_book_rating_member_book"/>
+        <addUniqueConstraint tableName="book_rating" columnNames="borrow_record_id" constraintName="uk_book_rating_borrow_record"/>
+        <createIndex tableName="book_rating" indexName="idx_book_rating_book_updated"><column name="book_id"/><column name="updated_at"/></createIndex>
+    </changeSet>
+</databaseChangeLog>

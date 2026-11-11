@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { borrowApi } from '../api/borrow'
+import { ratingsApi } from '../api/ratings'
 import { readError } from '../api/errors'
 import { useAuth } from '../context/AuthContext'
 import Alert from '../components/Alert'
@@ -29,10 +30,12 @@ import {
   getLoanProgress,
   CONDITION_MAP,
 } from './bookUtils'
+import BookRatingEditor from './BookRatingEditor'
 
 export default function CustomerLoansPage() {
   const { user } = useAuth()
   const [history, setHistory] = useState([])
+  const [myRatings, setMyRatings] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -53,8 +56,9 @@ export default function CustomerLoansPage() {
     setLoading(true)
     setError('')
     try {
-      const records = await borrowApi.history()
+      const [records, ratings] = await Promise.all([borrowApi.history(), ratingsApi.mine().catch(() => [])])
       setHistory(records || [])
+      setMyRatings(ratings || [])
     } catch (err) {
       setError(readError(err) || 'Không thể tải lịch sử mượn sách. Vui lòng thử lại.')
     } finally {
@@ -73,6 +77,7 @@ export default function CustomerLoansPage() {
   const overdueLoans = useMemo(() => activeLoans.filter((r) => isOverdue(r)), [activeLoans])
 
   const totalActiveLoans = activeLoans.length + pendingRequests.length
+  const myRatingsByBook = useMemo(() => new Map(myRatings.map((rating) => [String(rating.bookId), rating])), [myRatings])
 
   // Filtered completed history
   const filteredHistory = useMemo(() => {
@@ -391,6 +396,7 @@ export default function CustomerLoansPage() {
                   <th style={{ width: 140 }}>Tình trạng sách</th>
                   <th style={{ width: 130 }}>Chi phí</th>
                   <th style={{ width: 120 }}>Trạng thái</th>
+                  <th style={{ width: 160 }}>Đánh giá</th>
                 </tr>
               </thead>
               <tbody>
@@ -439,6 +445,11 @@ export default function CustomerLoansPage() {
                         <span className={`badge ${r.status === 'RETURNED' ? 'badge-neutral' : 'badge-danger'}`}>
                           {r.status === 'RETURNED' ? 'Đã hoàn trả' : 'Đã từ chối'}
                         </span>
+                      </td>
+                      <td>
+                        {r.status === 'RETURNED' ? (
+                          <BookRatingEditor bookId={r.bookId} borrowRecordId={r.id} existing={myRatingsByBook.get(String(r.bookId))} onSaved={loadData} />
+                        ) : <span style={{ color: 'var(--neo-text-light)' }}>—</span>}
                       </td>
                     </tr>
                   )

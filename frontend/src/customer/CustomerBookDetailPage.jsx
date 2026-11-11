@@ -2,12 +2,14 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { booksApi } from '../api/books'
 import { borrowApi } from '../api/borrow'
+import { ratingsApi } from '../api/ratings'
 import { readError } from '../api/errors'
 import Alert from '../components/Alert'
 import { BookIcon, ChevronRightIcon } from '../components/Icons'
 import { useAuth } from '../context/AuthContext'
 import { resolveBookCover } from './bookUtils'
 import CustomerBorrowModal from './CustomerBorrowModal'
+import BookRatingEditor from './BookRatingEditor'
 
 export default function CustomerBookDetailPage() {
   const { bookId } = useParams()
@@ -15,6 +17,7 @@ export default function CustomerBookDetailPage() {
   const { user, can } = useAuth()
   const [book, setBook] = useState(null)
   const [loans, setLoans] = useState([])
+  const [ratingSummary, setRatingSummary] = useState(null)
   const [borrowOpen, setBorrowOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -24,12 +27,14 @@ export default function CustomerBookDetailPage() {
     setLoading(true)
     setError('')
     try {
-      const [bookResult, loanResult] = await Promise.all([
+      const [bookResult, loanResult, ratingResult] = await Promise.all([
         booksApi.getById(bookId),
         can('BORROW_USE') ? borrowApi.history().catch(() => []) : Promise.resolve([]),
+        ratingsApi.forBook(bookId).catch(() => null),
       ])
       setBook(bookResult)
       setLoans(loanResult || [])
+      setRatingSummary(ratingResult)
     } catch (err) {
       setError(readError(err) || 'Không tải được thông tin sách.')
     } finally {
@@ -63,6 +68,7 @@ export default function CustomerBookDetailPage() {
   const cover = book ? resolveBookCover(book) : null
   const available = book?.quantityAvailable > 0 && book?.status === 'IN_CIRCULATION'
   const availableCopies = Math.max(0, Number(book?.quantityAvailable) || 0)
+  const returnedLoan = loans.find((loan) => String(loan.bookId) === String(bookId) && loan.status === 'RETURNED')
 
   const handleBorrowSuccess = async (borrowedBook, dueDate) => {
     setBorrowOpen(false)
@@ -171,6 +177,25 @@ export default function CustomerBookDetailPage() {
               Quay lại kho sách
             </button>
           </div>
+
+          <section className="book-rating-section" id="ratings">
+            <div className="book-rating-section__heading">
+              <div><span className="book-detail-kicker">CỘNG ĐỒNG ĐỌC SÁCH</span><h2>Đánh giá & cảm nhận</h2></div>
+              <div className="book-rating-average"><strong>{Number(ratingSummary?.averageRating || 0).toFixed(1)}</strong><span className="book-rating-average__stars">{'★'.repeat(Math.round(ratingSummary?.averageRating || 0))}{'☆'.repeat(5 - Math.round(ratingSummary?.averageRating || 0))}</span><small>{ratingSummary?.ratingCount || 0} đánh giá</small></div>
+            </div>
+            {returnedLoan && can('BORROW_USE') ? (
+              <BookRatingEditor bookId={book.id} borrowRecordId={returnedLoan.id} existing={ratingSummary?.myScore ? { score: ratingSummary.myScore, comment: ratingSummary.myComment } : null} onSaved={() => ratingsApi.forBook(book.id).then(setRatingSummary).catch(() => {})} />
+            ) : can('BORROW_USE') ? <p className="book-rating-eligibility">Bạn có thể đánh giá sau khi mượn và hoàn trả cuốn sách này.</p> : null}
+            <div className="book-rating-reviews">
+              {(ratingSummary?.reviews || []).length ? ratingSummary.reviews.map((review) => (
+                <article className="book-rating-review" key={review.id}>
+                  <div className="book-rating-review__head"><strong>{review.reviewerName || 'Bạn đọc'}</strong><span>{'★'.repeat(review.score)}{'☆'.repeat(5 - review.score)}</span></div>
+                  <time>{new Date(review.updatedAt || review.createdAt).toLocaleDateString('vi-VN')}</time>
+                  {review.comment && <p>{review.comment}</p>}
+                </article>
+              )) : <p className="book-rating-eligibility">Cuốn sách chưa có đánh giá. Hãy là người đầu tiên chia sẻ cảm nhận.</p>}
+            </div>
+          </section>
         </div>
       </section>
 

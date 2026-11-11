@@ -13,12 +13,14 @@ import {
 import { Ionicons } from '../components/AppIcon'
 import { colors } from '../constants/colors'
 import { borrowApi } from '../api/borrow'
+import { ratingsApi } from '../api/ratings'
 import { readError } from '../api/client'
 import { Badge, ConditionBadge } from '../components/Badge'
 import DueStamp from '../components/DueStamp'
 import GuideModal from '../components/GuideModal'
 import LibraryLogo from '../components/LibraryLogo'
 import { resolveBookCover } from '../components/BookCard'
+import BookRatingEditor from '../components/BookRatingEditor'
 
 function formatDate(iso) {
   if (!iso) return 'Chưa cập nhật'
@@ -41,6 +43,7 @@ const overdue = (record) =>
 
 export default function MyLoansScreen({ navigation }) {
   const [history, setHistory] = useState([])
+  const [myRatings, setMyRatings] = useState([])
   const [loading, setLoading] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [guideRecord, setGuideRecord] = useState(null)
@@ -49,8 +52,9 @@ export default function MyLoansScreen({ navigation }) {
 
   const fetchRecords = useCallback(async () => {
     try {
-      const data = await borrowApi.history()
+      const [data, ratings] = await Promise.all([borrowApi.history(), ratingsApi.mine().catch(() => [])])
       setHistory(data || [])
+      setMyRatings(ratings || [])
     } catch {
       // Ignore
     }
@@ -423,6 +427,15 @@ export default function MyLoansScreen({ navigation }) {
                         Phí phạt / bồi hoàn: {formatMoney(item.penaltyAmount)}
                       </Text>
                     ) : null}
+
+                    {item.status === 'RETURNED' && (
+                      <BookRatingEditor
+                        bookId={item.bookId}
+                        borrowRecordId={item.id}
+                        existing={myRatings.find((rating) => String(rating.bookId) === String(item.bookId))}
+                        onSaved={fetchRecords}
+                      />
+                    )}
                   </View>
                 </View>
               )
