@@ -1870,60 +1870,7 @@ textarea:disabled {
 }
 
 /* ==========================================================================
-   AUTHENTICATION SCREENS (Prompt Stage D Compliant)
-   Calm, structured, editorial, no generic purple-blue blobs
-   ========================================================================== */
-
-.auth-screen {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background-color: #f1f5f9;
-  background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
-  background-size: 20px 20px;
-}
-
-.auth-card {
-  width: 100%;
-  max-width: 420px;
-  padding: 32px;
-  border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-xl);
-  background-color: var(--color-bg-surface);
-  box-shadow: var(--shadow-lg);
-}
-
-.auth-header {
-  text-align: center;
-  margin-bottom: 24px;
-}
-
-.auth-logo {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  margin-bottom: 12px;
-  border-radius: var(--radius-lg);
-  background-color: var(--color-brand-surface);
-}
-
-.auth-card h1, .auth-card h2 {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  margin-bottom: 6px;
-}
-
-.auth-card .sub {
-  font-size: 13.5px;
-  color: var(--color-text-secondary);
-  margin-bottom: 0;
-}
-
+/* Shared auth link used by recovery and verification pages. */
 .auth-switch {
   margin-top: 18px;
   text-align: center;
@@ -2505,24 +2452,6 @@ textarea:disabled {
     padding: 12px;
   }
 
-  /* Auth Screens */
-  .auth-screen {
-    padding: 16px 12px;
-  }
-
-  .auth-card {
-    padding: 24px 18px;
-    border-radius: var(--radius-lg);
-  }
-
-  .auth-header {
-    margin-bottom: 20px;
-  }
-
-  .auth-card h1,
-  .auth-card h2 {
-    font-size: 20px;
-  }
 }
 
 /* --- Breakpoint 5: Small Mobile Phones (<= 540px) --- */

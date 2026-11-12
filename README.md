@@ -172,6 +172,17 @@ MySQL lưu dữ liệu trong Docker volume `mysql_data`; ảnh bìa tải lên �
 
 Email nhắc hạn được tắt mặc định. Để bật, đặt `APP_MAIL_ENABLED=true` và điền thông tin SMTP vào `.env`.
 
+#### Phát triển giao diện với hot reload
+
+Khởi động backend và MySQL nếu chưa chạy, sau đó mở Vite dev server trong Docker:
+
+```powershell
+docker compose up --build -d mysql backend
+docker compose -f docker-compose.dev.yml up --build -d
+```
+
+Mở `http://localhost:5174`. Mã nguồn `frontend/` được bind mount vào container nên thay đổi giao diện sẽ cập nhật tự động, không cần build lại image. API và ảnh được proxy tới backend tại cổng `8080`. Dừng dev server bằng `docker compose -f docker-compose.dev.yml down`.
+
 ### Chạy app Expo trong Docker (tùy chọn)
 
 Đặt `DOCKER_HOST_IP` thành địa chỉ IPv4 LAN của máy chạy Docker và `EXPO_PUBLIC_API_URL` thành URL backend mà thiết bị mobile truy cập được. Điện thoại thật và máy tính cần cùng mạng Wi-Fi. Với Android Emulator, đặt `EXPO_PUBLIC_API_URL=http://10.0.2.2:8080/api`.
