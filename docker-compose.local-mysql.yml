@@ -1,0 +1,14 @@
+# Use the MySQL80 service installed on Windows instead of the Docker MySQL service.
+services:
+  mysql:
+    profiles:
+      - docker-mysql
+
+  backend:
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3306/library_db?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Ho_Chi_Minh&tinyInt1isBit=false
+      SPRING_DATASOURCE_USERNAME: ${LOCAL_MYSQL_USER:-root}
+      SPRING_DATASOURCE_PASSWORD: ${LOCAL_MYSQL_PASSWORD:-}
+    depends_on: !reset []
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
