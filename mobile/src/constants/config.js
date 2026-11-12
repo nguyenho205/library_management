@@ -3,9 +3,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 
 // Mac dinh: 10.0.2.2 cho Android Emulator, localhost cho iOS/Web
 export const DEFAULT_API_HOST =
-  Platform.OS === 'android'
+  process.env.EXPO_PUBLIC_API_URL || (Platform.OS === 'android'
     ? 'http://10.0.2.2:8080/api'
-    : 'http://localhost:8080/api'
+    : 'http://localhost:8080/api')
 
 export const STORAGE_KEYS = {
   TOKEN: '@library_token',
