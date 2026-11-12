@@ -23,7 +23,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/library_db?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Ho_Chi_Minh
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/library_db?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Ho_Chi_Minh&tinyInt1isBit=false
       TZ: Asia/Ho_Chi_Minh
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-library}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-library_dev_password}
