@@ -1,0 +1,16 @@
+services:
+  web-dev:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    environment:
+      VITE_API_PROXY_TARGET: http://host.docker.internal:8080
+      CHOKIDAR_USEPOLLING: "true"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${WEB_DEV_PORT:-5174}:5173"
+    volumes:
+      - ./frontend:/web
+      - /web/node_modules
