@@ -1,5 +1,7 @@
 package com.fresher.library.security;
 
+import com.fresher.library.entity.SystemConfig;
+import com.fresher.library.repository.SystemConfigRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,6 +26,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService userDetailsService;
     private final TokenBlacklistService tokenBlacklistService;
+    private final SystemConfigRepository systemConfigRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -33,7 +36,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = resolveToken(request);
             if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)
                     && "ACCESS".equals(jwtTokenProvider.getTokenKind(token))
-                    && !tokenBlacklistService.isBlacklisted(token)) {
+                    && !tokenBlacklistService.isBlacklisted(token)
+                    && isCurrentMaintenanceSession(token)) {
 
                 String email = jwtTokenProvider.getEmailFromToken(token);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
@@ -54,6 +58,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             SecurityContextHolder.clearContext();
         }
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isCurrentMaintenanceSession(String token) {
+        SystemConfig config = systemConfigRepository.findById(1L).orElse(null);
+        long currentEpoch = config == null ? 0L : config.getMaintenanceEpoch();
+        if (jwtTokenProvider.getMaintenanceEpoch(token) == currentEpoch) {
+            return true;
+        }
+
+        // Admins must keep access while maintenance is active so they can turn it off.
+        return config != null
+                && config.isMaintenanceMode()
+                && "ADMIN".equalsIgnoreCase(jwtTokenProvider.getRoleFromToken(token));
     }
 
     private String resolveToken(HttpServletRequest request) {

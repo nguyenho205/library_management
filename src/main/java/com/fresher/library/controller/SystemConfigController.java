@@ -12,6 +12,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 /**
  * Chuc nang: MAN HINH CONFIG HE THONG (chi ADMIN - xem SecurityConfig)
  * - GET /api/config          : xem config he thong hien tai
@@ -30,6 +32,12 @@ public class SystemConfigController {
     @PreAuthorize("hasAuthority('CONFIG_VIEW')")
     public ResponseEntity<ApiResponse<SystemConfigResponse>> getConfig() {
         return ResponseEntity.ok(ApiResponse.success(systemConfigService.getConfig()));
+    }
+
+    @GetMapping("/maintenance-status")
+    public ResponseEntity<ApiResponse<Map<String, Boolean>>> getMaintenanceStatus() {
+        return ResponseEntity.ok(ApiResponse.success(
+                Map.of("maintenanceMode", systemConfigService.getConfig().isMaintenanceMode())));
     }
 
     @PutMapping("/maintenance")

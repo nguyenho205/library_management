@@ -33,6 +33,11 @@ export function AuthProvider({ children }) {
     setUser(null)
   }, [])
 
+  const logoutLocally = useCallback(() => {
+    clearTokens()
+    setUser(null)
+  }, [])
+
   const can = useCallback((code) => Boolean(user?.permissions?.includes(code)), [user])
 
   const updateUser = useCallback((patch) => {
@@ -46,7 +51,7 @@ export function AuthProvider({ children }) {
   const isAdmin = user?.role === 'ADMIN'
   const isLibrarian = user?.role === 'ADMIN' || user?.role === 'LIBRARIAN'
 
-  const value = { user, isAdmin, isLibrarian, can, login, logout, updateUser }
+  const value = { user, isAdmin, isLibrarian, can, login, logout, logoutLocally, updateUser }
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 

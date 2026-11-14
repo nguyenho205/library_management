@@ -10,6 +10,7 @@ import com.fresher.library.exception.UnauthorizedException;
 import com.fresher.library.repository.AccountRepository;
 import com.fresher.library.repository.MemberRepository;
 import com.fresher.library.repository.PermissionGroupRepository;
+import com.fresher.library.repository.SystemConfigRepository;
 import com.fresher.library.repository.VerificationTokenRepository;
 import com.fresher.library.security.JwtTokenProvider;
 import com.fresher.library.security.TokenBlacklistService;
@@ -47,6 +48,7 @@ public class AuthServiceImpl implements AuthService {
     private final TokenBlacklistService tokenBlacklistService;
     private final EmailService emailService;
     private final PermissionGroupRepository permissionGroupRepository;
+    private final SystemConfigRepository systemConfigRepository;
 
     @Override
     @Transactional
@@ -198,10 +200,17 @@ public class AuthServiceImpl implements AuthService {
         if (!"REFRESH".equals(jwtTokenProvider.getTokenKind(refreshToken))) {
             throw new UnauthorizedException("Token không phải là refresh token");
         }
-
         String email = jwtTokenProvider.getEmailFromToken(refreshToken);
         Account account = accountRepository.findByEmail(email)
                 .orElseThrow(() -> new UnauthorizedException("Tài khoản không tồn tại"));
+
+        boolean adminMaintainingSystem = account.getRole() == Role.ADMIN
+                && systemConfigRepository.findById(1L)
+                        .map(SystemConfig::isMaintenanceMode)
+                        .orElse(false);
+        if (!jwtTokenProvider.isCurrentMaintenanceEpoch(refreshToken) && !adminMaintainingSystem) {
+            throw new UnauthorizedException("Phiên đăng nhập đã kết thúc, vui lòng đăng nhập lại");
+        }
 
         if (!account.isEnabled()) {
             throw new UnauthorizedException("Tài khoản đã bị khoá hoặc vô hiệu hoá");
