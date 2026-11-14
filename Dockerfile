@@ -12,7 +12,9 @@ RUN addgroup -S spring && adduser -S spring -G spring \
     && mkdir -p /app/frontend/public/anhbia /app/frontend/public/biasach /app/public/anhbia \
     && chown -R spring:spring /app
 COPY --from=build --chown=spring:spring /workspace/target/library-management.jar /app/app.jar
+COPY --chown=spring:spring frontend/public/anhbia/ /app/default-covers/
+COPY --chown=spring:spring frontend/public/biasach/ /app/default-spines/
 
 USER spring:spring
 EXPOSE 8080
-ENTRYPOINT ["java", "-Duser.timezone=Asia/Ho_Chi_Minh", "-XX:MaxRAMPercentage=75.0", "-jar", "/app/app.jar"]
+ENTRYPOINT ["/bin/sh", "-c", "cp -a /app/default-covers/. /app/frontend/public/anhbia/ && cp -a /app/default-spines/. /app/frontend/public/biasach/ && exec java -Duser.timezone=Asia/Ho_Chi_Minh -XX:MaxRAMPercentage=75.0 -jar /app/app.jar"]
