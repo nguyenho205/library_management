@@ -170,24 +170,9 @@ docker compose logs -f backend
 
 MySQL lưu dữ liệu trong Docker volume `mysql_data`; ảnh bìa tải lên được giữ trong volume `book_covers`. Dừng các container bằng `docker compose down`; dữ liệu vẫn còn. `docker compose down -v` sẽ xóa cả database và các volume dữ liệu.
 
-#### Dùng MySQL cũ cài trên Windows
+#### Database khi chạy bằng Docker
 
-Nếu dữ liệu nằm trong dịch vụ Windows `MySQL80`, hãy dừng container MySQL Docker để nhường cổng `3306`, rồi bật dịch vụ Windows:
-
-```powershell
-docker compose stop mysql
-Start-Service MySQL80
-```
-
-Nếu Windows báo thiếu quyền, mở PowerShell bằng quyền Administrator để chạy `Start-Service`. Đặt `LOCAL_MYSQL_USER` và `LOCAL_MYSQL_PASSWORD` trong `.env` theo tài khoản MySQL cũ nếu không dùng `root` không mật khẩu. Sau đó chạy backend và web với cấu hình kết nối MySQL trên máy host:
-
-```powershell
-docker compose -f docker-compose.yml -f docker-compose.local-mysql.yml up --build -d backend web
-```
-
-Volume MySQL Docker được giữ nguyên. Muốn quay lại database Docker, dừng dịch vụ Windows bằng `Stop-Service MySQL80`, rồi chạy lại `docker compose up --build -d`.
-
-Email nhắc hạn được tắt mặc định. Để bật, đặt `APP_MAIL_ENABLED=true` và điền thông tin SMTP vào `.env`.
+Compose chạy MySQL riêng trong container mysql; backend kết nối tới mysql:3306. Database lưu trong volume mysql_data. Cổng MySQL không được publish ra Windows nên không xung đột với MySQL của Laragon. Dùng docker compose up -d để khởi động dự án. Không chạy docker compose down -v nếu cần giữ dữ liệu.
 
 #### Phát triển giao diện với hot reload
 
