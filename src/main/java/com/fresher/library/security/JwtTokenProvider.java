@@ -5,8 +5,10 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import com.fresher.library.repository.SystemConfigRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -21,7 +23,10 @@ import java.util.Date;
  */
 @Component
 @Log4j2
+@RequiredArgsConstructor
 public class JwtTokenProvider {
+
+    private final SystemConfigRepository systemConfigRepository;
 
     @Value("${app.jwt.secret}")
     private String jwtSecret;
@@ -62,6 +67,7 @@ public class JwtTokenProvider {
                 .setSubject(email)
                 .claim("role", role)
                 .claim("tokenKind", tokenKind)
+                .claim("maintenanceEpoch", currentMaintenanceEpoch())
                 .setIssuedAt(now)
                 .setExpiration(expiry);
         if (sessionId != null) {
@@ -86,6 +92,15 @@ public class JwtTokenProvider {
         return (String) parseClaims(token).get("sessionId");
     }
 
+    public long getMaintenanceEpoch(String token) {
+        Object epoch = parseClaims(token).get("maintenanceEpoch");
+        return epoch instanceof Number number ? number.longValue() : 0L;
+    }
+
+    public boolean isCurrentMaintenanceEpoch(String token) {
+        return getMaintenanceEpoch(token) == currentMaintenanceEpoch();
+    }
+
     public Date getExpiration(String token) {
         return parseClaims(token).getExpiration();
     }
@@ -108,5 +123,11 @@ public class JwtTokenProvider {
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
+    }
+
+    private long currentMaintenanceEpoch() {
+        return systemConfigRepository.findById(1L)
+                .map(config -> config.getMaintenanceEpoch())
+                .orElse(0L);
     }
 }

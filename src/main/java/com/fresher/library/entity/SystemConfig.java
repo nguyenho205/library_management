@@ -29,6 +29,10 @@ public class SystemConfig {
     @JdbcTypeCode(SqlTypes.TINYINT)
     private boolean maintenanceMode = false;
 
+    @Builder.Default
+    @Column(name = "maintenance_epoch", nullable = false)
+    private long maintenanceEpoch = 0L;
+
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 

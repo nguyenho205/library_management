@@ -35,6 +35,9 @@ public class SystemConfigServiceImpl implements SystemConfigService {
     @Transactional
     public SystemConfigResponse updateMaintenanceMode(SystemConfigRequest request, String updatedBy) {
         SystemConfig config = getOrCreateConfig();
+        if (request.getMaintenanceMode() && !config.isMaintenanceMode()) {
+            config.setMaintenanceEpoch(config.getMaintenanceEpoch() + 1);
+        }
         config.setMaintenanceMode(request.getMaintenanceMode());
         config.setUpdatedAt(LocalDateTime.now());
         config.setUpdatedBy(updatedBy);

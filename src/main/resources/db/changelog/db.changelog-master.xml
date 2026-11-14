@@ -26,5 +26,6 @@
     <include file="db/changelog/changes/019-create-notification-table.xml" relativeToChangelogFile="false"/>
     <include file="db/changelog/changes/020-create-book-rating-table.xml" relativeToChangelogFile="false"/>
     <include file="db/changelog/changes/021-normalize-boolean-columns.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/022-add-maintenance-epoch.xml" relativeToChangelogFile="false"/>
 
 </databaseChangeLog>

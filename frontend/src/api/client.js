@@ -41,6 +41,14 @@ client.interceptors.response.use(
     const originalRequest = error.config
     const status = error.response?.status
 
+    if (status === 503) {
+      clearTokens()
+      if (window.location.pathname !== '/maintenance') {
+        window.location.replace('/maintenance')
+      }
+      return Promise.reject(error)
+    }
+
     if (status === 401 && !originalRequest._retry && !originalRequest.url.includes('/auth/')) {
       originalRequest._retry = true
 
@@ -62,7 +70,9 @@ client.interceptors.response.use(
       try {
         if (!refreshPromise) {
           refreshPromise = axios
-            .post('/api/auth/refresh', { refreshToken })
+            .post('/api/auth/refresh', { refreshToken }, {
+              headers: { Authorization: `Bearer ${refreshToken}` },
+            })
             .then((res) => res.data.data)
             .finally(() => { refreshPromise = null })
         }
