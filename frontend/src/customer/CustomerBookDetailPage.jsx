@@ -11,6 +11,8 @@ import { resolveBookCover } from './bookUtils'
 import CustomerBorrowModal from './CustomerBorrowModal'
 import BookRatingEditor from './BookRatingEditor'
 
+const MAX_DISPLAYED_BOOK_COVERS = 10
+
 export default function CustomerBookDetailPage() {
   const { bookId } = useParams()
   const navigate = useNavigate()
@@ -68,6 +70,7 @@ export default function CustomerBookDetailPage() {
   const cover = book ? resolveBookCover(book) : null
   const available = book?.quantityAvailable > 0 && book?.status === 'IN_CIRCULATION'
   const availableCopies = Math.max(0, Number(book?.quantityAvailable) || 0)
+  const displayedCopies = Math.min(availableCopies, MAX_DISPLAYED_BOOK_COVERS)
   const returnedLoan = loans.find((loan) => String(loan.bookId) === String(bookId) && loan.status === 'RETURNED')
 
   const handleBorrowSuccess = async (borrowedBook, dueDate) => {
@@ -113,8 +116,8 @@ export default function CustomerBookDetailPage() {
         <div className="book-detail-art">
           <div className="book-detail-cover-wrap">
             {availableCopies > 0 ? (
-              <div className="book-detail-stock-stack" role="img" aria-label={`${availableCopies} cuốn ${book.title} đang có sẵn`}>
-                {Array.from({ length: availableCopies }, (_, index) => (
+              <div className="book-detail-stock-stack" role="img" aria-label={`${displayedCopies} ảnh bìa minh họa cho ${availableCopies} cuốn ${book.title} đang có sẵn`}>
+                {Array.from({ length: displayedCopies }, (_, index) => (
                   <div
                     className="book-detail-stock-copy"
                     key={`${book.id}-copy-${index}`}
