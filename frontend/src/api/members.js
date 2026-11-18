@@ -2,6 +2,7 @@ import client from './client'
 
 export const membersApi = {
   getProfile: () => client.get('/members/me').then((r) => r.data.data),
+  getCard: () => client.get('/members/me/card').then((r) => r.data.data),
   updateProfile: (payload) => client.put('/members/me', payload).then((r) => r.data.data),
   search: (params) => client.get('/members', { params }).then((r) => r.data.data),
   create: (payload) => client.post('/members', payload).then((r) => r.data.data),

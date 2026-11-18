@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   View,
   Text,
@@ -13,14 +13,25 @@ import { Ionicons } from '../components/AppIcon'
 import { colors } from '../constants/colors'
 import { useAuth } from '../context/AuthContext'
 import { authApi } from '../api/auth'
+import { membersApi } from '../api/members'
 import { readError } from '../api/client'
 import ServerConfigModal from '../components/ServerConfigModal'
 import LibraryLogo from '../components/LibraryLogo'
 import { Badge } from '../components/Badge'
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ navigation }) {
   const { user, isAdmin, logout } = useAuth()
   const [serverModalVisible, setServerModalVisible] = useState(false)
+  const [memberCard, setMemberCard] = useState(null)
+
+  useEffect(() => {
+    if (isAdmin) return
+    const unsubscribe = navigation?.addListener?.('focus', () => {
+      membersApi.getCard().then(setMemberCard).catch(() => {})
+    })
+    membersApi.getCard().then(setMemberCard).catch(() => {})
+    return unsubscribe
+  }, [isAdmin, navigation])
 
   // Change password form
   const [oldPassword, setOldPassword] = useState('')
@@ -84,6 +95,7 @@ export default function ProfileScreen() {
         <View style={styles.headerTop}>
           <LibraryLogo compact={false} size={0.88} />
         </View>
+
         <Text style={styles.headerTitle}>Tài khoản của tôi</Text>
         <Text style={styles.headerSubtitle}>
           Quản lý thông tin bạn đọc và thiết lập bảo mật
@@ -107,6 +119,18 @@ export default function ProfileScreen() {
             </View>
           </View>
         </View>
+
+        {memberCard && (
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Thẻ thành viên · {memberCard.tierName}</Text>
+            <Text style={styles.sectionDesc}>Mượn tối đa {memberCard.maxActiveLoans} cuốn cùng lúc</Text>
+            <Text style={styles.sectionDesc}>
+              {memberCard.qualifyingReturnsLast30Days} lượt trả sách nguyên vẹn trong 30 ngày gần nhất.
+              {memberCard.nextTierAt ? ` Cần ${memberCard.nextTierAt} lượt để lên hạng tiếp theo.` : ' Đã đạt hạng cao nhất.'}
+            </Text>
+            <Text style={styles.sectionDesc}>Tiêu chuẩn: 0–2 lượt · Bạc: 3–5 lượt · Vàng: từ 6 lượt. Hạng được xét lại mỗi ngày.</Text>
+          </View>
+        )}
 
         {/* Change Password Card matching SettingsPage.jsx PasswordSection */}
         <View style={styles.sectionCard}>

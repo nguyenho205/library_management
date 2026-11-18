@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDate;
 
 public interface BorrowRecordRepository extends JpaRepository<BorrowRecord, Long> {
 
@@ -43,6 +44,14 @@ public interface BorrowRecordRepository extends JpaRepository<BorrowRecord, Long
     boolean existsByMember_IdAndStatusIn(Long memberId, Collection<BorrowStatus> statuses);
 
     long countByMember_IdAndStatusIn(Long memberId, Collection<BorrowStatus> statuses);
+
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(r) FROM BorrowRecord r WHERE r.member.id = :memberId " +
+            "AND r.status = com.fresher.library.entity.BorrowStatus.RETURNED " +
+            "AND r.bookCondition = com.fresher.library.entity.BookCondition.INTACT " +
+            "AND r.returnDate >= :startDate AND r.returnDate <= :endDate")
+    long countQualifyingReturns(@org.springframework.data.repository.query.Param("memberId") Long memberId,
+                                @org.springframework.data.repository.query.Param("startDate") LocalDate startDate,
+                                @org.springframework.data.repository.query.Param("endDate") LocalDate endDate);
 
     boolean existsByMember_IdAndBook_IdAndStatusIn(Long memberId, Long bookId, Collection<BorrowStatus> statuses);
 

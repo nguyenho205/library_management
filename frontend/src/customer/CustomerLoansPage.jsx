@@ -31,9 +31,12 @@ import {
   CONDITION_MAP,
 } from './bookUtils'
 import BookRatingEditor from './BookRatingEditor'
+import useMemberCard from './useMemberCard'
 
 export default function CustomerLoansPage() {
   const { user } = useAuth()
+  const memberCard = useMemberCard(Boolean(user))
+  const borrowLimit = memberCard?.maxActiveLoans || 2
   const [history, setHistory] = useState([])
   const [myRatings, setMyRatings] = useState([])
   const [loading, setLoading] = useState(true)
@@ -143,13 +146,14 @@ export default function CustomerLoansPage() {
 
         <div className="loans-header-quota-card">
           <div className="quota-card-label">Hạn mức mượn sách</div>
-          <div className="quota-card-val">{String(totalActiveLoans).padStart(2, '0')} / 02</div>
+          <div className="quota-card-val">{String(totalActiveLoans).padStart(2, '0')} / {String(borrowLimit).padStart(2, '0')}</div>
           <div className="quota-card-sub">
-            {totalActiveLoans >= 2 ? 'Đã đạt hạn mức tối đa' : `Còn ${2 - totalActiveLoans} lượt mượn khả dụng`}
+            {totalActiveLoans >= borrowLimit ? 'Đã đạt hạn mức tối đa' : `Còn ${borrowLimit - totalActiveLoans} lượt mượn khả dụng`}
           </div>
           <div className="quota-card-bars">
-            <div className={`quota-bar ${totalActiveLoans >= 1 ? 'filled' : ''}`} />
-            <div className={`quota-bar ${totalActiveLoans >= 2 ? 'filled' : ''}`} />
+            {Array.from({ length: borrowLimit }, (_, index) => (
+              <div key={index} className={`quota-bar ${totalActiveLoans > index ? 'filled' : ''}`} />
+            ))}
           </div>
         </div>
       </section>
@@ -173,7 +177,7 @@ export default function CustomerLoansPage() {
       <section className="loans-section">
         <div className="loans-section-head">
           <h2 className="loans-section-title">
-            Sách Đang Mượn ({activeLoans.length}/2 cuốn)
+            Sách Đang Mượn ({activeLoans.length}/{borrowLimit} cuốn)
           </h2>
         </div>
 
@@ -254,7 +258,7 @@ export default function CustomerLoansPage() {
             </div>
             <div className="empty-banner-text">
               <h3>Hiện tại bạn không mượn cuốn sách nào</h3>
-              <p>Mỗi bạn đọc được mượn tối đa 2 cuốn sách cùng lúc với thời hạn 10 ngày.</p>
+              <p>Hạng {memberCard?.tierName || 'Tiêu chuẩn'} được mượn tối đa {borrowLimit} cuốn sách cùng lúc với thời hạn 10 ngày.</p>
             </div>
             <Link to="/catalog" className="btn btn-primary btn-sm">
               Khám phá kho sách

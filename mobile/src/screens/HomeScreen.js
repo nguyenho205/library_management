@@ -13,6 +13,7 @@ import { colors } from '../constants/colors'
 import { useAuth } from '../context/AuthContext'
 import { booksApi } from '../api/books'
 import { borrowApi } from '../api/borrow'
+import { membersApi } from '../api/members'
 import LibraryLogo from '../components/LibraryLogo'
 import BookCard, { CURATED_COVERS, resolveBookCover } from '../components/BookCard'
 import DueStamp from '../components/DueStamp'
@@ -38,20 +39,23 @@ export default function HomeScreen({ navigation }) {
   const [tabData, setTabData] = useState({ CATEGORY: [], AUTHOR: [], POPULAR: [] })
   const [totalCatalogCount, setTotalCatalogCount] = useState(0)
   const [history, setHistory] = useState([])
+  const [memberCard, setMemberCard] = useState(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [guideRecord, setGuideRecord] = useState(null)
 
   const loadDashboard = useCallback(async () => {
     try {
-      const [histRes, countRes, catalogRes] = await Promise.allSettled([
+      const [histRes, countRes, catalogRes, cardRes] = await Promise.allSettled([
         borrowApi.history(),
         booksApi.search({ page: 0, size: 1, status: 'IN_CIRCULATION' }),
         booksApi.search({ page: 0, size: 100, status: 'IN_CIRCULATION' }),
+        membersApi.getCard(),
       ])
 
       const userHistory = histRes.status === 'fulfilled' ? histRes.value || [] : []
       setHistory(userHistory)
+      if (cardRes.status === 'fulfilled') setMemberCard(cardRes.value)
 
       if (countRes.status === 'fulfilled' && countRes.value?.totalElements != null) {
         setTotalCatalogCount(countRes.value.totalElements)
@@ -117,7 +121,8 @@ export default function HomeScreen({ navigation }) {
     [history]
   )
   const totalActiveLoans = activeLoans.length + pendingLoans.length
-  const reachedBorrowLimit = totalActiveLoans >= 2
+  const borrowLimit = memberCard?.maxActiveLoans || 2
+  const reachedBorrowLimit = totalActiveLoans >= borrowLimit
 
   const completedCount = useMemo(
     () => history.filter((r) => r.status === 'RETURNED').length,
@@ -198,14 +203,12 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>Sách đang mượn</Text>
             <Text style={styles.statNumber}>
-              {loading ? '…' : `${String(totalActiveLoans).padStart(2, '0')} / 02`}
+              {loading ? '…' : `${String(totalActiveLoans).padStart(2, '0')} / ${String(borrowLimit).padStart(2, '0')}`}
             </Text>
             <Text style={styles.statDesc} numberOfLines={2}>
-              {totalActiveLoans >= 2
-                ? 'Đã đạt tối đa 2 cuốn'
-                : totalActiveLoans === 1
-                ? 'Còn 1 lượt mượn'
-                : 'Mượn tối đa 2 cuốn / 1 lần'}
+              {totalActiveLoans >= borrowLimit
+                ? `Đã đạt tối đa ${borrowLimit} cuốn`
+                : `Còn ${borrowLimit - totalActiveLoans} lượt mượn`}
             </Text>
           </View>
 
@@ -242,7 +245,7 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.sectionHead}>
             <Text style={styles.sectionTitle}>
               {activeLoans.length > 0
-                ? `Sách đang mượn (${activeLoans.length}/2 cuốn)`
+                ? `Sách đang mượn (${activeLoans.length}/${borrowLimit} cuốn)`
                 : pendingLoans.length > 0
                 ? `Yêu cầu mượn chờ duyệt (${pendingLoans.length})`
                 : 'Sách đang mượn'}
@@ -443,7 +446,7 @@ export default function HomeScreen({ navigation }) {
 
           <View style={styles.ruleItem}>
             <Text style={styles.ruleItemTitle}>• Hạn mức mượn:</Text>
-            <Text style={styles.ruleItemDesc}>Tối đa 02 cuốn / 1 lần mượn. Thời hạn giữ sách: 10 ngày.</Text>
+            <Text style={styles.ruleItemDesc}>Tối đa {borrowLimit} cuốn theo hạng thành viên. Thời hạn giữ sách: 10 ngày.</Text>
           </View>
 
           <View style={styles.ruleItem}>

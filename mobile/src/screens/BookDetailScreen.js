@@ -13,6 +13,7 @@ import { Ionicons } from '../components/AppIcon'
 import { colors } from '../constants/colors'
 import { booksApi } from '../api/books'
 import { borrowApi } from '../api/borrow'
+import { membersApi } from '../api/members'
 import { ratingsApi } from '../api/ratings'
 import { readError } from '../api/client'
 import { resolveBookCover } from '../components/BookCard'
@@ -39,6 +40,7 @@ export default function BookDetailScreen({ route, navigation }) {
   const { bookId } = route.params
   const [book, setBook] = useState(null)
   const [userLoans, setUserLoans] = useState([])
+  const [memberCard, setMemberCard] = useState(null)
   const [ratingSummary, setRatingSummary] = useState(null)
   const [loading, setLoading] = useState(true)
   const [borrowing, setBorrowing] = useState(false)
@@ -46,11 +48,12 @@ export default function BookDetailScreen({ route, navigation }) {
   const [imageError, setImageError] = useState(false)
 
   useEffect(() => {
-    Promise.allSettled([booksApi.get(bookId), borrowApi.history(), ratingsApi.forBook(bookId)])
-      .then(([bookRes, loansRes, ratingsRes]) => {
+    Promise.allSettled([booksApi.get(bookId), borrowApi.history(), ratingsApi.forBook(bookId), membersApi.getCard()])
+      .then(([bookRes, loansRes, ratingsRes, cardRes]) => {
         if (bookRes.status === 'fulfilled') setBook(bookRes.value)
         if (loansRes.status === 'fulfilled') setUserLoans(loansRes.value || [])
         if (ratingsRes.status === 'fulfilled') setRatingSummary(ratingsRes.value)
+        if (cardRes.status === 'fulfilled') setMemberCard(cardRes.value)
       })
       .catch((err) => Alert.alert('Lỗi', readError(err)))
       .finally(() => setLoading(false))
@@ -80,7 +83,8 @@ export default function BookDetailScreen({ route, navigation }) {
   const activeLoans = userLoans.filter((r) => r.status === 'BORROWED')
   const pendingLoans = userLoans.filter((r) => r.status === 'PENDING')
   const totalActiveLoans = activeLoans.length + pendingLoans.length
-  const reachedBorrowLimit = totalActiveLoans >= 2
+  const borrowLimit = memberCard?.maxActiveLoans || 2
+  const reachedBorrowLimit = totalActiveLoans >= borrowLimit
 
   const isAlreadyBorrowingThisBook = userLoans.some(
     (r) => (r.status === 'BORROWED' || r.status === 'PENDING') && r.bookId === book.id
@@ -93,7 +97,7 @@ export default function BookDetailScreen({ route, navigation }) {
     if (reachedBorrowLimit) {
       Alert.alert(
         'Đã đạt giới hạn',
-        'Theo quy định thư viện, mỗi bạn đọc mượn tối đa 2 cuốn / 1 lần. Vui lòng trả sách trước khi mượn tiếp.'
+        `Hạng hiện tại được mượn tối đa ${borrowLimit} cuốn. Vui lòng trả sách trước khi mượn tiếp.`
       )
       return
     }
@@ -251,7 +255,7 @@ export default function BookDetailScreen({ route, navigation }) {
             <View style={styles.alertWarning}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.alertWarningText}>
-                  Theo quy định thư viện, mỗi bạn đọc mượn tối đa 2 cuốn / 1 lần. Hiện bạn đã có {totalActiveLoans} cuốn đang mượn hoặc chờ duyệt.
+                  Hạng hiện tại được mượn tối đa {borrowLimit} cuốn. Hiện bạn đã có {totalActiveLoans} cuốn đang mượn hoặc chờ duyệt.
                 </Text>
                 <TouchableOpacity
                   onPress={() => navigation.navigate('MyLoans')}
@@ -266,7 +270,7 @@ export default function BookDetailScreen({ route, navigation }) {
               {totalActiveLoans > 0 && (
                 <View style={styles.quotaNote}>
                   <Text style={styles.quotaNoteText}>
-                    Bạn đang có {totalActiveLoans}/2 cuốn (còn 1 lượt mượn khả dụng).
+                    Bạn đang có {totalActiveLoans}/{borrowLimit} cuốn (còn {borrowLimit - totalActiveLoans} lượt mượn khả dụng).
                   </Text>
                 </View>
               )}

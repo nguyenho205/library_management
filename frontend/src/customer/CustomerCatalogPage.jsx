@@ -26,11 +26,14 @@ import {
   getFutureDate,
 } from './bookUtils'
 import CustomerBorrowModal from './CustomerBorrowModal'
+import useMemberCard from './useMemberCard'
 
 export default function CustomerCatalogPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const { user, can } = useAuth()
+  const memberCard = useMemberCard(Boolean(user))
+  const borrowLimit = memberCard?.maxActiveLoans || 2
 
   // Query params parsing
   const queryParams = new URLSearchParams(location.search)
@@ -154,7 +157,7 @@ export default function CustomerCatalogPage() {
 
   const activeLoans = userLoans.filter((r) => r.status === 'BORROWED' || r.status === 'PENDING')
   const totalActiveLoans = activeLoans.length
-  const reachedBorrowLimit = totalActiveLoans >= 2
+  const reachedBorrowLimit = totalActiveLoans >= borrowLimit
 
   const hasActiveFilters = Boolean(
     appliedFilters.title || appliedFilters.author || appliedFilters.isbn || appliedFilters.categoryId
@@ -285,7 +288,7 @@ export default function CustomerCatalogPage() {
           </div>
           {user && (
             <div className="catalog-user-quota-hint">
-              Hạn mức bạn đọc: <strong>{totalActiveLoans}/02 cuốn</strong>
+              Hạn mức bạn đọc: <strong>{totalActiveLoans}/{borrowLimit} cuốn</strong>
             </div>
           )}
         </div>

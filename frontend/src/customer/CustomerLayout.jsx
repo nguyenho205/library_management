@@ -16,9 +16,12 @@ import {
   ClockIcon,
 } from '../components/Icons'
 import NotificationBell from '../components/NotificationBell'
+import useMemberCard from './useMemberCard'
 
 export default function CustomerLayout() {
   const { user, isAdmin, can, logout } = useAuth()
+  const memberCard = useMemberCard(Boolean(user))
+  const borrowLimit = memberCard?.maxActiveLoans || 2
   const navigate = useNavigate()
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -97,7 +100,7 @@ export default function CustomerLayout() {
                   <CirculationIcon width={16} height={16} />
                   <span>Sổ mượn</span>
                   {activeLoansCount > 0 && (
-                    <span className="customer-nav-pill-badge">{activeLoansCount}/2</span>
+                    <span className="customer-nav-pill-badge">{activeLoansCount}/{borrowLimit}</span>
                   )}
                 </NavLink>
               )}
@@ -186,7 +189,7 @@ export default function CustomerLayout() {
             {can('BORROW_USE') && (
               <NavLink to="/my-loans" className={({ isActive }) => `customer-mobile-link${isActive ? ' is-active' : ''}`}>
                 <CirculationIcon width={18} height={18} />
-                <span>Sổ mượn & trả sách ({activeLoansCount}/2 cuốn)</span>
+                <span>Sổ mượn & trả sách ({activeLoansCount}/{borrowLimit} cuốn)</span>
               </NavLink>
             )}
             {user && (
@@ -267,7 +270,7 @@ export default function CustomerLayout() {
           <div className="customer-footer-col">
             <h4 className="customer-footer-heading">Quy chế bạn đọc</h4>
             <ul className="customer-footer-links">
-              <li><span>Hạn ngạch: <strong>Tối đa 2 cuốn / lần</strong></span></li>
+              <li><span>Hạn ngạch: <strong>Tối đa {borrowLimit} cuốn theo hạng</strong></span></li>
               <li><span>Thời hạn mượn: <strong>10 ngày / cuốn</strong></span></li>
               <li><span>Phí dịch vụ mượn: <strong>20.000 đ / lần</strong></span></li>
               <li><span>Phí trễ hạn: <strong>5.000 đ / ngày</strong></span></li>

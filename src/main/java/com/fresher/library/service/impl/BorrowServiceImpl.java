@@ -20,6 +20,7 @@ import com.fresher.library.repository.MemberRepository;
 import com.fresher.library.service.BorrowService;
 import com.fresher.library.service.EmailService;
 import com.fresher.library.service.NotificationService;
+import com.fresher.library.service.MemberCardService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -46,7 +47,6 @@ public class BorrowServiceImpl implements BorrowService {
 
     public static final int DEFAULT_LOAN_PERIOD_DAYS = 10;
     public static final int MAX_LOAN_PERIOD_DAYS = 10;
-    public static final int MAX_ACTIVE_BORROW_LIMIT = 2;
     public static final BigDecimal DEFAULT_PENALTY_RATE_PER_DAY = new BigDecimal("5000");
     public static final BigDecimal SERVICE_FEE = new BigDecimal("20000");
     public static final BigDecimal LOST_PROCESSING_FEE = new BigDecimal("50000");
@@ -57,6 +57,7 @@ public class BorrowServiceImpl implements BorrowService {
     private final AccountRepository accountRepository;
     private final EmailService emailService;
     private final NotificationService notificationService;
+    private final MemberCardService memberCardService;
 
     @Override
     @Transactional
@@ -64,13 +65,13 @@ public class BorrowServiceImpl implements BorrowService {
         Member member = memberRepository.findByAccount_EmailWithLock(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hồ sơ thành viên cho tài khoản: " + email));
 
-        // Quy định: Số lượng mượn tối đa 2 cuốn / 1 lần mượn (đang mượn + đang chờ duyệt)
+        int borrowLimit = memberCardService.forMember(member.getId()).maxActiveLoans();
         long activeOrPendingCount = borrowRecordRepository.countByMember_IdAndStatusIn(
                 member.getId(), List.of(BorrowStatus.BORROWED, BorrowStatus.PENDING));
-        if (activeOrPendingCount >= MAX_ACTIVE_BORROW_LIMIT) {
-            throw new BadRequestException("Theo quy định của thư viện, mỗi độc giả được mượn tối đa " + MAX_ACTIVE_BORROW_LIMIT
-                    + " cuốn / 1 lần mượn. Hiện bạn đã có " + activeOrPendingCount
-                    + " cuốn đang mượn hoặc chờ duyệt. Vui lòng hoàn tất hoặc trả bớt sách trước khi mượn tiếp.");
+        if (activeOrPendingCount >= borrowLimit) {
+            throw new BadRequestException("Hạng thành viên hiện tại được mượn tối đa " + borrowLimit
+                    + " cuốn. Bạn đã có " + activeOrPendingCount
+                    + " cuốn đang mượn hoặc chờ duyệt. Vui lòng trả sách trước khi mượn tiếp.");
         }
 
         Book book = bookRepository.findById(bookId)
