@@ -6,6 +6,7 @@ import Modal from '../components/Modal'
 import Alert from '../components/Alert'
 import { BookIcon, ClockIcon, CheckCircleIcon } from '../components/Icons'
 import { resolveBookCover, getMinReturnDate, getMaxReturnDate, getDefaultReturnDate, getFutureDate, formatDate } from './bookUtils'
+import useMemberCard from './useMemberCard'
 
 export default function CustomerBorrowModal({
   book,
@@ -19,11 +20,13 @@ export default function CustomerBorrowModal({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [successNotice, setSuccessNotice] = useState('')
+  const memberCard = useMemberCard(Boolean(user))
+  const borrowLimit = memberCard?.maxActiveLoans || 2
 
   if (!book) return null
 
   const coverUrl = resolveBookCover(book)
-  const reachedBorrowLimit = totalActiveLoans >= 2
+  const reachedBorrowLimit = totalActiveLoans >= borrowLimit
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -109,7 +112,7 @@ export default function CustomerBorrowModal({
           </div>
         ) : reachedBorrowLimit ? (
           <div className="customer-modal-warn-callout">
-            <strong>Hạn mức mượn sách đã đạt tối đa (02/02 cuốn).</strong>
+            <strong>Hạn mức mượn sách đã đạt tối đa ({totalActiveLoans}/{borrowLimit} cuốn).</strong>
             <p style={{ margin: '4px 0 0', fontSize: 13 }}>
               Theo quy định thư viện, bạn vui lòng hoàn trả ít nhất một cuốn sách đang mượn trước khi đăng ký mượn thêm.
             </p>
@@ -124,7 +127,7 @@ export default function CustomerBorrowModal({
         ) : (
           <form onSubmit={handleSubmit} className="customer-modal-form">
             <div className="customer-quota-notice">
-              <span>Hạn mức hiện tại: <strong>{totalActiveLoans}/02 cuốn</strong> (Còn {2 - totalActiveLoans} lượt mượn khả dụng).</span>
+              <span>Hạn mức hiện tại: <strong>{totalActiveLoans}/{borrowLimit} cuốn</strong> (Còn {borrowLimit - totalActiveLoans} lượt mượn khả dụng).</span>
             </div>
 
             <div className="field">

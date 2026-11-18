@@ -4,8 +4,10 @@ import com.fresher.library.dto.request.MemberUpdateRequest;
 import com.fresher.library.dto.request.RegisterRequest;
 import com.fresher.library.dto.response.ApiResponse;
 import com.fresher.library.dto.response.MemberResponse;
+import com.fresher.library.dto.response.MemberCardResponse;
 import com.fresher.library.dto.response.PageResponse;
 import com.fresher.library.service.MemberService;
+import com.fresher.library.service.MemberCardService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,14 @@ import java.time.LocalDate;
 public class MemberController {
 
     private final MemberService memberService;
+    private final MemberCardService memberCardService;
+
+    @GetMapping("/me/card")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<MemberCardResponse>> getCurrentCard(
+            org.springframework.security.core.Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.success(memberCardService.forEmail(authentication.getName())));
+    }
 
     @GetMapping
     @PreAuthorize("hasAuthority('MEMBER_VIEW')")

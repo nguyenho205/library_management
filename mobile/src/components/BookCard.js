@@ -140,7 +140,7 @@ export default function BookCard({
               </View>
             ) : limitReached ? (
               <View style={styles.disabledBtn}>
-                <Text style={styles.disabledBtnText}>Đạt tối đa (2/2)</Text>
+                <Text style={styles.disabledBtnText}>Đạt hạn mức</Text>
               </View>
             ) : isAvailable && onBorrowPress ? (
               <TouchableOpacity

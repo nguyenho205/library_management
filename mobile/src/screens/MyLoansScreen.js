@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '../components/AppIcon'
 import { colors } from '../constants/colors'
 import { borrowApi } from '../api/borrow'
+import { membersApi } from '../api/members'
 import { ratingsApi } from '../api/ratings'
 import { readError } from '../api/client'
 import { Badge, ConditionBadge } from '../components/Badge'
@@ -43,6 +44,7 @@ const overdue = (record) =>
 
 export default function MyLoansScreen({ navigation }) {
   const [history, setHistory] = useState([])
+  const [memberCard, setMemberCard] = useState(null)
   const [myRatings, setMyRatings] = useState([])
   const [loading, setLoading] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
@@ -52,9 +54,10 @@ export default function MyLoansScreen({ navigation }) {
 
   const fetchRecords = useCallback(async () => {
     try {
-      const [data, ratings] = await Promise.all([borrowApi.history(), ratingsApi.mine().catch(() => [])])
+      const [data, ratings, card] = await Promise.all([borrowApi.history(), ratingsApi.mine().catch(() => []), membersApi.getCard().catch(() => null)])
       setHistory(data || [])
       setMyRatings(ratings || [])
+      setMemberCard(card)
     } catch {
       // Ignore
     }
@@ -162,7 +165,7 @@ export default function MyLoansScreen({ navigation }) {
         <View style={styles.sectionWrap}>
           <View style={styles.sectionHeading}>
             <Text style={styles.sectionTitle}>
-              Sách đang mượn ({activeLoans.length}/2 cuốn)
+              Sách đang mượn ({activeLoans.length}/{memberCard?.maxActiveLoans || 2} cuốn)
             </Text>
           </View>
 
@@ -232,7 +235,7 @@ export default function MyLoansScreen({ navigation }) {
                   Hiện tại bạn không mượn cuốn sách nào
                 </Text>
                 <Text style={styles.emptyLoanDesc}>
-                  Theo quy định, bạn có thể mượn tối đa 2 cuốn sách cùng lúc với thời hạn 10 ngày.
+                  Hạng {memberCard?.tierName || 'Tiêu chuẩn'} được mượn tối đa {memberCard?.maxActiveLoans || 2} cuốn sách cùng lúc với thời hạn 10 ngày.
                 </Text>
               </View>
               <TouchableOpacity

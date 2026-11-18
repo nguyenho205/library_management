@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { membersApi } from '../api/members'
+import useMemberCard from './useMemberCard'
 import { readError } from '../api/errors'
 import Alert from '../components/Alert'
 import Skeleton from '../components/Skeleton'
@@ -19,6 +20,7 @@ export default function CustomerProfilePage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [profile, setProfile] = useState(null)
+  const memberCard = useMemberCard(Boolean(user))
   const [form, setForm] = useState({
     fullName: '',
     dateOfBirth: '',
@@ -172,10 +174,29 @@ export default function CustomerProfilePage() {
               </div>
               <div style={{ textAlign: 'right' }}>
                 <span className="pass-label">Hạn mức mượn</span>
-                <div className="pass-quota-text">02 cuốn / 10 ngày</div>
+                <div className="pass-quota-text">{memberCard?.maxActiveLoans || 2} cuốn / 10 ngày</div>
               </div>
             </div>
           </div>
+
+          {memberCard && (
+            <div className="digital-member-pass-card" style={{ marginTop: 18 }}>
+              <div className="pass-card-top">
+                <span className="pass-library-title">HẠNG THÀNH VIÊN</span>
+                <span className="pass-status-pill active">{memberCard.tierName.toUpperCase()}</span>
+              </div>
+              <p style={{ color: '#fff', fontSize: 22, fontWeight: 700, margin: '20px 0 8px' }}>
+                {memberCard.tierName} · Mượn tối đa {memberCard.maxActiveLoans} cuốn
+              </p>
+              <p style={{ color: '#ddd', margin: 0 }}>
+                {memberCard.qualifyingReturnsLast30Days} lượt trả sách nguyên vẹn trong 30 ngày gần nhất.
+                {memberCard.nextTierAt ? ` Cần ${memberCard.nextTierAt} lượt để lên hạng tiếp theo.` : ' Bạn đã đạt hạng cao nhất.'}
+              </p>
+              <p style={{ color: '#bbb', fontSize: 12, marginBottom: 0 }}>
+                Tiêu chuẩn: 0–2 lượt · Bạc: 3–5 lượt · Vàng: từ 6 lượt. Hạng tự cập nhật mỗi ngày theo 30 ngày gần nhất.
+              </p>
+            </div>
+          )}
 
           {/* Account Security Quick Card */}
           <div className="profile-security-card">

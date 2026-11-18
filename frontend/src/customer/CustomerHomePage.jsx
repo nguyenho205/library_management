@@ -25,6 +25,7 @@ import {
   getLoanProgress,
 } from './bookUtils'
 import CustomerBorrowModal from './CustomerBorrowModal'
+import useMemberCard from './useMemberCard'
 
 // Curated collections metadata
 const FEATURED_COLLECTIONS = [
@@ -202,7 +203,9 @@ export default function CustomerHomePage() {
   const activeLoans = useMemo(() => userHistory.filter((r) => r.status === 'BORROWED'), [userHistory])
   const pendingRequests = useMemo(() => userHistory.filter((r) => r.status === 'PENDING'), [userHistory])
   const totalActiveLoans = activeLoans.length + pendingRequests.length
-  const reachedBorrowLimit = totalActiveLoans >= 2
+  const memberCard = useMemberCard(Boolean(user))
+  const borrowLimit = memberCard?.maxActiveLoans || 2
+  const reachedBorrowLimit = totalActiveLoans >= borrowLimit
 
   const activeCollection = useMemo(() => {
     return FEATURED_COLLECTIONS.find((c) => c.id === activeCollectionId) || FEATURED_COLLECTIONS[0]
@@ -290,7 +293,7 @@ export default function CustomerHomePage() {
                 <Link to="/my-loans" className="btn-immersive-secondary">
                   <CirculationIcon width={17} height={17} />
                   <span>Sổ mượn cá nhân</span>
-                  <span className="hero-action-pill">{totalActiveLoans}/2 cuốn</span>
+                  <span className="hero-action-pill">{totalActiveLoans}/{borrowLimit} cuốn</span>
                 </Link>
               )}
             </div>
@@ -360,7 +363,7 @@ export default function CustomerHomePage() {
             </div>
             {user && (
               <Link to="/my-loans" className="lounge-view-all">
-                <span>Mở sổ mượn sách ({totalActiveLoans}/2)</span>
+                <span>Mở sổ mượn sách ({totalActiveLoans}/{borrowLimit})</span>
                 <ChevronRightIcon width={14} height={14} />
               </Link>
             )}
@@ -724,7 +727,7 @@ export default function CustomerHomePage() {
                             Đang mượn
                           </Link>
                         ) : reachedBorrowLimit ? (
-                          <Link to="/my-loans" className="bookstore-borrow-btn btn-muted" title="Hạn mức tối đa 2 cuốn">
+                          <Link to="/my-loans" className="bookstore-borrow-btn btn-muted" title={`Hạn mức tối đa ${borrowLimit} cuốn`}>
                             Hết hạn ngạch
                           </Link>
                         ) : isAvailable ? (

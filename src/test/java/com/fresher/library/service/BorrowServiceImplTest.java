@@ -41,6 +41,8 @@ class BorrowServiceImplTest {
     private MemberRepository memberRepository;
     @Mock
     private com.fresher.library.repository.AccountRepository accountRepository;
+    @Mock
+    private MemberCardService memberCardService;
 
     @InjectMocks
     private BorrowServiceImpl borrowService;
@@ -53,6 +55,23 @@ class BorrowServiceImplTest {
         Account account = Account.builder().id(1L).email("user@test.com").role(Role.USER).build();
         member = Member.builder().id(10L).fullName("Nguyen Van A").account(account).build();
         book = Book.builder().id(100L).title("Clean Code").quantityTotal(5).quantityAvailable(2).version(0L).build();
+        lenient().when(memberCardService.forMember(10L)).thenReturn(
+                new com.fresher.library.dto.response.MemberCardResponse("STANDARD", "Tiêu chuẩn", 2, 0, 3,
+                        java.time.LocalDate.now().minusDays(29), java.time.LocalDate.now()));
+    }
+
+    @Test
+    void requestBorrow_usesCurrentTierLimitForPendingAndActiveLoans() {
+        when(memberRepository.findByAccount_EmailWithLock("user@test.com")).thenReturn(Optional.of(member));
+        when(memberCardService.forMember(10L)).thenReturn(
+                new com.fresher.library.dto.response.MemberCardResponse("GOLD", "Vàng", 5, 6, null,
+                        java.time.LocalDate.now().minusDays(29), java.time.LocalDate.now()));
+        when(borrowRecordRepository.countByMember_IdAndStatusIn(eq(10L), any())).thenReturn(5L);
+
+        assertThatThrownBy(() -> borrowService.requestBorrow("user@test.com", 100L, null))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("tối đa 5 cuốn");
+        verify(bookRepository, never()).findById(any());
     }
 
     @Test
