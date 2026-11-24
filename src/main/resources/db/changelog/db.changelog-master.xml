@@ -27,5 +27,6 @@
     <include file="db/changelog/changes/020-create-book-rating-table.xml" relativeToChangelogFile="false"/>
     <include file="db/changelog/changes/021-normalize-boolean-columns.xml" relativeToChangelogFile="false"/>
     <include file="db/changelog/changes/022-add-maintenance-epoch.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/023-create-social-identity-table.xml" relativeToChangelogFile="false"/>
 
 </databaseChangeLog>

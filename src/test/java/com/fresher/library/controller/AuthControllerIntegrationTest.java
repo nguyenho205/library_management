@@ -102,4 +102,21 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(get("/api/books"))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    void socialConfig_isPublicButContainsNoAppSecret() throws Exception {
+        mockMvc.perform(get("/api/auth/social/config"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.googleClientId").exists())
+                .andExpect(jsonPath("$.data.facebookAppId").exists())
+                .andExpect(jsonPath("$.data.facebookAppSecret").doesNotExist());
+    }
+
+    @Test
+    void socialLink_requiresExistingSession() throws Exception {
+        mockMvc.perform(post("/api/auth/social/facebook/link")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"credential\":\"test-token\"}"))
+                .andExpect(status().isUnauthorized());
+    }
 }

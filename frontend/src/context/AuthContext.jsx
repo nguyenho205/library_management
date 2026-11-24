@@ -23,6 +23,15 @@ export function AuthProvider({ children }) {
     return u
   }, [])
 
+  const loginWithSocial = useCallback(async (provider, credential) => {
+    const data = await authApi.socialLogin(provider, credential)
+    setTokens(data)
+    const account = { email: data.email, role: data.role, permissions: data.permissions || [] }
+    localStorage.setItem('user', JSON.stringify(account))
+    setUser(account)
+    return account
+  }, [])
+
   const logout = useCallback(async () => {
     try {
       await authApi.logout()
@@ -51,7 +60,7 @@ export function AuthProvider({ children }) {
   const isAdmin = user?.role === 'ADMIN'
   const isLibrarian = user?.role === 'ADMIN' || user?.role === 'LIBRARIAN'
 
-  const value = { user, isAdmin, isLibrarian, can, login, logout, logoutLocally, updateUser }
+  const value = { user, isAdmin, isLibrarian, can, login, loginWithSocial, logout, logoutLocally, updateUser }
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 

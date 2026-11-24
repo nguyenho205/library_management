@@ -33,7 +33,8 @@ public class MaintenanceModeFilter extends OncePerRequestFilter {
 
     private static final String MAINTENANCE_STATUS_PATH = "/api/config/maintenance-status";
     private static final String REFRESH_PATH = "/api/auth/refresh";
-    private static final String[] AUTH_ENTRY_POINTS = {"/api/auth/login", "/api/auth/register"};
+    private static final String[] AUTH_ENTRY_POINTS = {"/api/auth/login", "/api/auth/register",
+            "/api/auth/social/google", "/api/auth/social/facebook"};
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)

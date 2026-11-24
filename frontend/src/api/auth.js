@@ -1,6 +1,9 @@
 import client from './client'
 
 export const authApi = {
+  socialConfig: () => client.get('/auth/social/config').then((r) => r.data.data),
+  socialLogin: (provider, credential) => client.post(`/auth/social/${provider}`, { credential }).then((r) => r.data.data),
+  linkSocial: (provider, credential) => client.post(`/auth/social/${provider}/link`, { credential }).then((r) => r.data.data),
   login: (email, password) => client.post('/auth/login', { email, password }).then((r) => r.data.data),
   register: (payload) => client.post('/auth/register', payload).then((r) => r.data),
   logout: () => client.post('/auth/logout').then((r) => r.data),

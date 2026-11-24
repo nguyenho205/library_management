@@ -5,10 +5,11 @@ import { readError } from '../api/errors'
 import { MailIcon, LockIcon, CloseIcon, BookIcon, ChevronRightIcon } from '../components/Icons'
 import Alert from '../components/Alert'
 import PasswordInput from '../components/PasswordInput'
+import SocialSignInButtons from '../components/SocialSignInButtons'
 import '../styles/login-page.css'
 
 export default function LoginPage() {
-  const { user, login } = useAuth()
+  const { user, login, loginWithSocial } = useAuth()
   const navigate = useNavigate()
   const [panelOpen, setPanelOpen] = useState(false)
   const [returnTo, setReturnTo] = useState('/')
@@ -57,6 +58,19 @@ export default function LoginPage() {
     setBusy(true)
     try {
       await login(email, password)
+      navigate(returnTo)
+    } catch (err) {
+      setError(readError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const socialLogin = async (provider, credential) => {
+    setError('')
+    setBusy(true)
+    try {
+      await loginWithSocial(provider, credential)
       navigate(returnTo)
     } catch (err) {
       setError(readError(err))
@@ -131,6 +145,8 @@ export default function LoginPage() {
             <div className="login-form__options"><span>Secure member access</span><Link to="/forgot-password">Forgot password?</Link></div>
             <button className="login-form__submit" type="submit" disabled={busy}>{busy ? 'Signing in…' : <>Sign In</>}</button>
           </form>
+
+          <SocialSignInButtons onCredential={socialLogin} onError={setError} disabled={busy} locale="en" />
 
           <p className="login-panel__register">New to the library? <Link to="/register">Create an account</Link></p>
           <p className="login-panel__privacy">Your reading journey is always yours.</p>
