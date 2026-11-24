@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+    <changeSet id="023-create-social-identity-table" author="codex">
+        <createTable tableName="social_identity">
+            <column name="id" type="BIGINT" autoIncrement="true"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="account_id" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="provider" type="VARCHAR(20)"><constraints nullable="false"/></column>
+            <column name="subject" type="VARCHAR(255)"><constraints nullable="false"/></column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="social_identity" baseColumnNames="account_id"
+                                 referencedTableName="account" referencedColumnNames="id"
+                                 constraintName="fk_social_identity_account" onDelete="CASCADE"/>
+        <addUniqueConstraint tableName="social_identity" columnNames="provider, subject" constraintName="uk_social_provider_subject"/>
+        <addUniqueConstraint tableName="social_identity" columnNames="account_id, provider" constraintName="uk_social_account_provider"/>
+    </changeSet>
+</databaseChangeLog>

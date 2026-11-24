@@ -4,6 +4,8 @@ import com.fresher.library.dto.request.*;
 import com.fresher.library.dto.response.ApiResponse;
 import com.fresher.library.dto.response.JwtResponse;
 import com.fresher.library.service.AuthService;
+import com.fresher.library.service.SocialAuthService;
+import com.fresher.library.service.SocialTokenVerifier;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,29 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final SocialAuthService socialAuthService;
+    private final SocialTokenVerifier socialTokenVerifier;
+
+    @GetMapping("/social/config")
+    public ResponseEntity<ApiResponse<java.util.Map<String, String>>> socialConfig() {
+        return ResponseEntity.ok(ApiResponse.success(java.util.Map.of(
+                "googleClientId", socialTokenVerifier.googleWebClientId(),
+                "facebookAppId", socialTokenVerifier.facebookAppId())));
+    }
+
+    @PostMapping("/social/{provider}")
+    public ResponseEntity<ApiResponse<JwtResponse>> socialLogin(@PathVariable String provider,
+            @Valid @RequestBody SocialLoginRequest request) {
+        return ResponseEntity.ok(ApiResponse.success("Đăng nhập thành công",
+                socialAuthService.login(provider, request.credential())));
+    }
+
+    @PostMapping("/social/{provider}/link")
+    public ResponseEntity<ApiResponse<Void>> linkSocial(Authentication authentication, @PathVariable String provider,
+            @Valid @RequestBody SocialLoginRequest request) {
+        socialAuthService.link(authentication.getName(), provider, request.credential());
+        return ResponseEntity.ok(ApiResponse.success("Liên kết tài khoản thành công", null));
+    }
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<Void>> register(@Valid @RequestBody RegisterRequest request) {

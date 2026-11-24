@@ -1,0 +1,11 @@
+.social-signin { display: grid; gap: 10px; margin-top: 18px; }
+.social-signin__divider { display: flex; align-items: center; gap: 12px; color: rgba(255,255,255,.56); font-size: 12px; text-align: center; }
+.social-signin__divider::before, .social-signin__divider::after { flex: 1; height: 1px; background: rgba(255,255,255,.18); content: ''; }
+.social-signin__google { display: flex; min-height: 42px; justify-content: center; }
+.social-signin__facebook { display: flex; min-height: 42px; width: 100%; align-items: center; justify-content: center; gap: 10px; border: 1px solid rgba(255,255,255,.26); border-radius: 999px; background: rgba(255,255,255,.06); color: #fff; cursor: pointer; font-size: 13px; font-weight: 600; }
+.social-signin__facebook:hover:not(:disabled) { background: rgba(255,255,255,.13); }
+.social-signin__facebook:disabled { opacity: .55; cursor: wait; }
+.social-signin__facebook-icon { display: grid; width: 23px; height: 23px; place-items: center; border-radius: 50%; background: #1877f2; color: #fff; font: 700 19px Arial, sans-serif; }
+.settings-section .social-signin__divider { color: #596273; }
+.settings-section .social-signin__divider::before, .settings-section .social-signin__divider::after { background: #d3d8df; }
+.settings-section .social-signin__facebook { border-color: #c9d0dc; background: #fff; color: #142034; }

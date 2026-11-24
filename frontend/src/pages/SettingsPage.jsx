@@ -7,6 +7,7 @@ import Alert from '../components/Alert'
 import ConfirmModal from '../components/ConfirmModal'
 import { SettingsIcon, KeyIcon, MailIcon, ShieldIcon, AlertCircleIcon } from '../components/Icons'
 import PasswordInput from '../components/PasswordInput'
+import SocialSignInButtons from '../components/SocialSignInButtons'
 
 export default function SettingsPage({ adminMode = false }) {
   const { can } = useAuth()
@@ -38,9 +39,34 @@ export default function SettingsPage({ adminMode = false }) {
         {showConfig && <MaintenanceSection />}
         <PasswordSection />
         <EmailSection />
+        {!adminMode && <SocialLinkSection />}
       </div>
     </>
   )
+}
+
+function SocialLinkSection() {
+  const [notice, setNotice] = useState('')
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const link = async (provider, credential) => {
+    setBusy(true)
+    setError('')
+    try {
+      await authApi.linkSocial(provider, credential)
+      setNotice(`Đã liên kết ${provider === 'google' ? 'Google' : 'Facebook'} với tài khoản này.`)
+    } catch (err) {
+      setError(readError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return <SectionCard icon={<ShieldIcon width={18} height={18} />} title="Liên kết Google / Facebook"
+    hint="Sau khi liên kết, bạn có thể đăng nhập bằng tài khoản mạng xã hội tương ứng.">
+    {notice && <Alert type="success">{notice}</Alert>}
+    {error && <Alert type="error">{error}</Alert>}
+    <SocialSignInButtons onCredential={link} onError={setError} disabled={busy} />
+  </SectionCard>
 }
 
 function SectionCard({ icon, title, hint, children }) {
